@@ -1,13 +1,11 @@
-# README #
+# scHiC 2.0: Sequence and Analysis of single-cell Hi-C datasets #
 
-This README would normally document whatever steps are necessary to get your application up and running.
 
-### What is this repository for? ###
+## Introduction ##
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+This repository provides the code used to process and analyze single-cell Hi-C libraries in the paper: **Cell-cycle dynamics of chromosomal organisation at single-cell resolution** by Nagano and Lubling et al., Nature, 2017.
 
+More details to come...
 ### How do I get set up? ###
 
 * Summary of set up
