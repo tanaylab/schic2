@@ -1,4 +1,4 @@
-# scHiC 2.0: Sequence and Analysis of single-cell Hi-C datasets #
+# scHiC 2.0: Sequence and analysis pipeline of single-cell Hi-C datasets #
 
 
 ## Introduction ##
