@@ -7,14 +7,5 @@ This repository provides the code used to process and analyze single-cell Hi-C l
 
 More details to come...
 
-### How do I get set up? ###
-
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
-
 ### Who do I talk to? ###
 For help, please contact yaniv.lubling@weizmann.ac.il
