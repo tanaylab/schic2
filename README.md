@@ -30,7 +30,7 @@ _misha_ is an R package for genomic analysis, developed by the Tanay lab. To ins
 install.packages("http://www.wisdom.weizmann.ac.il/~lubling/schic2/misha_3.5.6.tar.gz", repos=NULL)
 ```
 
-We supply an mm9 genomic database with the genomic and epigenetic data required to run the sequence pipeline and the downstream analysis. Download and unpack [this]("http://www.wisdom.weizmann.ac.il/~lubling/schic2/schic2_mm9_db.tar.gz") archive (5.5 Gb after unpacking). 
+We supply an mm9 genomic database with the genomic and epigenetic data required to run the sequence pipeline and the downstream analysis. Download and unpack [this](http://www.wisdom.weizmann.ac.il/~lubling/schic2/schic2_mm9_db.tar.gz) archive (5.5 Gb after unpacking). 
 
 ## Who do I talk to? ##
 For help, please contact yaniv.lubling@weizmann.ac.il
