@@ -7,7 +7,7 @@ This repository provides the code used to process and analyze single-cell Hi-C l
 It is composed of two main parts (see more details below):
 
 1. **Sequence processing**: relevant code under the _map3c_ folder. It processes a de-multiplexed input fastq paired-end reads files into a list of contacts. 
-2. **Single-cell analysis**: relevant code under the _analysis_ folder. It contains the code that builds the data and creates the figures that appear in the paper. The _tracdb_ folder in this tar is the root directory of the genomic database, later referred to as _groot_.
+2. **Single-cell analysis**: relevant code under the _analysis_ folder. It contains the code that builds the data and creates the figures that appear in the paper. 
 
 ## Requirements ##
 - _Perl_ 
@@ -30,7 +30,8 @@ _misha_ is an R package for genomic analysis, developed by the Tanay lab. To ins
 install.packages("http://www.wisdom.weizmann.ac.il/~lubling/schic2/misha_3.5.6.tar.gz", repos=NULL)
 ```
 
-We supply an mm9 genomic database with the genomic and epigenetic data required to run the sequence pipeline and the downstream analysis. Download and unpack [this](http://www.wisdom.weizmann.ac.il/~lubling/schic2/schic2_mm9_db.tar.gz) archive (5.5 Gb after unpacking). 
+We supply an mm9 genomic database with the genomic and epigenetic data required to run the sequence pipeline and the downstream analysis. Download and unpack [this](http://www.wisdom.weizmann.ac.il/~lubling/schic2/schic2_mm9_db.tar.gz) archive (5.5 Gb after unpacking). The _trackdb_ folder in this tar is the root directory of the genomic database, later referred to as _groot_.
+
 
 ## Who do I talk to? ##
 For help, please contact yaniv.lubling@weizmann.ac.il
