@@ -4,6 +4,10 @@
 
 This repository provides the code used to process and analyze single-cell Hi-C libraries in the paper: **Cell-cycle dynamics of chromosomal organisation at single-cell resolution** by Nagano and Lubling et al., Nature, 2017.
 
+It is composed of two main parts (see more details below):
+
+1. **Sequence processing**: relevant code under the _map3c_ folder. It processes a de-multiplexed input fastq paired-end reads files into a list of contacts. 
+2. **Single-cell analysis**: relevant code under the _analysis_ folder. It contains the code that builds the data and creates the figures that appear in the paper. 
 
 ## Requirements ##
 - _Perl_ 
