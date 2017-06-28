@@ -1,5 +1,5 @@
-library(MASS)
-library(zoo)
+#library(MASS)
+#library(zoo)
 
 ##################################
 #
@@ -184,28 +184,4 @@ get_tad_borders_per_group <- function(g_nms = c('post_m', 'g1', 'early_s', 'mid_
   
   list(scope=scope, buc=buc, bord=bl, gbuc=gbuc, gbord=gbl, b_ins_vals=b_ins_vals)
 }
-
-#######
-#
-gen_post_mitotic_insu_and_shuffle <- function(mit_tn=paste0(pool_tn, "_group_1_post_m"), min_diag_d=8192, res=2e4, ignore_below=1024)
-{
-  new_track=sprintf("%s_ins_discard%d_%ds", mit_tn, min_diag_d, ins_scale)
-  if (gtrack.exists(new_track)) {
-    gtrack.rm(new_track, T)
-  }
-  gtrack.2d.gen_insu_track(mit_tn, ins_scale, res=res, min_diag_d=min_diag_d, new_track=new_track, ignore_below=ignore_below)
-
-  options(shaman.sge_support=1)
-  shaman_shuffle_hic_track(track_db=sch_groot, obs_track_nm=mit_tn, work_dir=sprintf("%s/", sch_rdata_dir))
-
-  mit_s_tn = sprintf("%s_shuffle", mit_tn)
-
-  new_track=sprintf("%s_ins_discard%d_%ds", mit_s_tn, min_diag_d, ins_scale)
-  if (gtrack.exists(new_track)) {
-    gtrack.rm(new_track, T)
-  }
-  gtrack.2d.gen_insu_track(mit_s_tn, ins_scale, res=res, min_diag_d=min_diag_d, new_track=new_track, ignore_below)
-  
-}
-
 

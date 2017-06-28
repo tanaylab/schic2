@@ -817,7 +817,7 @@ group_cells_by_metrics <- function(early_cp=c("green", "black", "red"), k=30, do
 
 #######
 # insulation on TAD borders by CC order, grouped and border stratification (AA, BB, AB)
-insu_by_cc_grouped <- function(cc_ord_cells_m, rel_odir_pref="ordering/insu_cc", scale=3e5, group_size=100, delta=1e-3, min_mean_b_count=1, chroms=paste0("chr", sch_chroms), idata=NULL, sort_domains="kmeans", n_ds=8, k=4, tor_horiz=300e3, norm_domains=T, norm_by_slices=NULL, colspec=c("cyan", "blue", "black", "yellow", "red"), name="", insu_name=sprintf("_tad_borders_gt%s", n2str(sch_remove_near_dist)), per_cell_func=mean, rebuild=F, dixon_borders_fn=sprintf("%s/dixon2012/dixon2012_mESC_boundaries.txt", sch_table_dir), dixon_max_border_size=80e3)
+insu_by_cc_grouped <- function(cc_ord_cells_m, rel_odir_pref="ordering/insu_cc", scale=3e5, group_size=100, delta=1e-3, min_mean_b_count=1, chroms=paste0("chr", sch_chroms), idata=NULL, sort_domains="kmeans", n_ds=8, k=4, tor_horiz=300e3, norm_domains=T, norm_by_slices=NULL, colspec=c("cyan", "blue", "black", "yellow", "red"), name="", insu_name=sprintf("_tad_borders_gt%s", n2str(sch_remove_near_dist)), per_cell_func=mean, rebuild=F, dixon_max_border_size=80e3)
 {
   cc_ord_cells_m = cc_ord_cells_m[cc_ord_cells_m$valid,]
   cc_ord_cells = rownames(cc_ord_cells_m)
@@ -1513,11 +1513,10 @@ sch_mit_align_test <- function(rebuild=F, nms=NULL)
 #####################
 plot_contacts_between_score_filtered_conv_ctcf_by_pooled_group <- function(extend_by=50e3, nbins=51, ctcf_chip_q=0.9, tor_horiz=2e5, band=c(2e5, 1e6), pool_q_cutoff=0, pool_loop_extend=1e4, min_score=60, score_tn=sprintf("%s_score", pool_tn), conv_ctcf=NULL, zlim=c(-1,1), colspec=c("purple", "navy", "blue", "#87FFFF", "white", "#FF413D", "black", "orange", "yellow"), odir=sprintf("%s/ordering", sch_fig_dir))
 {
-  group_nums = 1:6
-  group_nms = c('post_m', 'g1', 'early_s', 'mid_s_g2', 'pre_m', 'm')
-  #group_tns = c("scell.nextera.pool_mit_hyb_es_b", paste(pool_tn, "group", group_nums[2:4], group_nms[2:4], sep="_"))
+  group_nums = 1:5
+  group_nms = c('post_m', 'g1', 'early_s', 'mid_s_g2', 'pre_m')
   
-  group_tns = c(paste(pool_tn, "group", group_nums[1:5], group_nms[1:5], sep="_"), "scell.nextera.pool_mit_hyb_es_b")
+  group_tns = c(paste(pool_tn, "group", group_nums, group_nms, sep="_"))
 
   if (is.null(conv_ctcf)) {
     conv_ctcf = .get_conv_ctcf_with_tor(ctcf_chip_q=ctcf_chip_q, tor_horiz=tor_horiz, band=band, pool_q_cutoff=pool_q_cutoff, pool_loop_extend=pool_loop_extend, min_d_score=min_score, score_tn=score_tn)
@@ -1731,39 +1730,6 @@ chrom_phasing_stats_by_cc <- function(chroms=sch_chroms, pointsize=7, fres=120, 
   list(far_mu=far_mu, near_f=near_f)
 }
 
-
-xxx pool_mitotic_cells <- function(mitotic_cells=c("scell.nextera.1CDX4_74", "scell.nextera.1CDX4_276", "scell.nextera.1CDX4_453", "scell.nextera.1CDS2_547", "scell.nextera.1CDX4_147", "scell.nextera.1CDX4_386", "scell.nextera.1CDX4_242", "scell.nextera.1CDX4_62", "scell.nextera.1CDX4_315"), mit_tn="scell.nextera.pool_mit_hyb_es_b", min_diag_d=8192, res=20000, ignore_below=1024)
-{
-  base_dir2 = "/net/mraid14/export/tgdata/db/tgdb/mm9/rawdata/scell_hic/cells_hyb_apr_2016/processed"
-  base_dir1 = "/net/mraid14/export/tgdata/db/tgdb/mm9/rawdata/scell_hic/cells_hyb_feb_2016/processed"
-
-  mit_names = gsub("_", ".", gsub("scell.nextera.", "", grep("1CD", mitotic_cells, value=T)), fixed=T)
-
-  mit_hyb_es_dirs = c(paste(base_dir1, mit_names, sep="/"), paste(base_dir2, mit_names, sep="/"))
-
-  mit_hyb_es_dirs = mit_hyb_es_dirs[file.exists(mit_hyb_es_dirs)]
-
-
-  #message("Pooling mit hyb ES...")
-  #sch_create_pooled_track(mit_hyb_es_dirs, pool_track_nm=mit_tn, adj_base_dir=NULL, adj_out=paste(base_dir, "/combined_mit_hyb_es_adj", sep="/"))
-
-  new_track=sprintf("%s_ins_discard%d_%ds", mit_tn, min_diag_d, ins_scale)
-  if (gtrack.exists(new_track)) {
-    gtrack.rm(new_track, T)
-  }
-  gtrack.2d.gen_insu_track(mit_tn, ins_scale, res=res, min_diag_d=min_diag_d, new_track=new_track, ignore_below=ignore_below)
-
-  #shuffle_2d_hic_track("/net/mraid14/export/tgdata/db/tgdb/mm9/trackdb", mit_tn, "/net/mraid14/export/tgdata/db/tgdb/mm9/rawdata/scell_hic/cells_hyb_apr_2016/processed/tmp_shuffle/")
-  mit_s_tn = sprintf("%s_shuffle", mit_tn)
-  new_track=sprintf("%s_ins_discard%d_%ds", mit_s_tn, min_diag_d, ins_scale)
-  if (gtrack.exists(new_track)) {
-    gtrack.rm(new_track, T)
-  }
-  gtrack.2d.gen_insu_track(mit_s_tn, ins_scale, res=res, min_diag_d=min_diag_d, new_track=new_track, ignore_below)
-
-
-
-}
 
 ##########################################
 # conv CTCF contacts at a band, strarify by CTCF ToR
@@ -2153,7 +2119,7 @@ sch_create_domain_marg_cov <- function(discard_cis_below=sch_remove_near_dist, c
 }
 
 
-domain_marg_cov_plots <- function(mean_kb_cov_range=c(0.04, 0.16), clus_method="sort_by_cor", hc_method="ward.D2", order_by="tor", k=40, zlim=c(-0.3, 0.3), reord=NULL, chroms=sch_chroms, name="all", colspec=c("blue", "white", "red"), group_size=211, sw=101, max_chr_cov_enr=0.3, ord_only=F, odir=sch_fig_dir, plot_fig=T, use_method="raw", ord_pc_ifn=sprintf("%s/new_pc.txt", sch_table_dir), rebuild=F, ref_tn="scell.nextera.pool_good_hyb_2i_idx_sort_es")
+domain_marg_cov_plots <- function(mean_kb_cov_range=c(0.04, 0.16), clus_method="sort_by_cor", hc_method="ward.D2", order_by="tor", k=40, zlim=c(-0.3, 0.3), reord=NULL, chroms=sch_chroms, name="all", colspec=c("blue", "white", "red"), group_size=211, sw=101, max_chr_cov_enr=0.3, ord_only=F, odir=sch_fig_dir, plot_fig=T, use_method="raw", ord_pc_ifn=sprintf("%s/new_pc.txt", sch_table_dir), rebuild=F, ref_tn="scell.nextera.pool_good_hyb_2i_all_es")
 {
   mv = sch_decay_metrics[sch_decay_metrics$valid, ]
   km = NULL
@@ -2455,7 +2421,7 @@ calc_domains_ab_frac <- function(tn=pool_tn, d=NULL, min_cis=2e6, vfunc="weighte
 
 ################
 #
-calc_domains_a_score <- function(tn="scell.nextera.pool_good_hyb_2i_idx_sort_es",  vfunc="weighted.sum", d=NULL, use_trans=T, rebuild=F)
+calc_domains_a_score <- function(tn="scell.nextera.pool_good_hyb_2i_all_es",  vfunc="weighted.sum", d=NULL, use_trans=T, rebuild=F)
 {
   ifn = sprintf("%s/%s_a_score_%s_%dDoms_%s.rdata", sch_rdata_dir, tn, vfunc, ifelse(is.null(d), 0, nrow(d)), ifelse(use_trans, "trans", "cis"))
 
@@ -2525,7 +2491,7 @@ sch_get_ab_tagged_domains <- function(raw_tn=pool_tn, vfunc="weighted.sum", by_r
 # Distribution of TADs A-association across single cells
 #
 ########################################################
-calc_domains_weighted_a_score_across_cells <- function(ref_tn="scell.nextera.pool_good_hyb_2i_idx_sort_es", min_cis_dist=2e6, ref_d=NULL, vfunc="weighted.sum", min_domain_contacts=4, min_unique_domains_contacted=2, use_frac_c=F, rebuild=F)
+calc_domains_weighted_a_score_across_cells <- function(ref_tn="scell.nextera.pool_good_hyb_2i_all_es", min_cis_dist=2e6, ref_d=NULL, vfunc="weighted.sum", min_domain_contacts=4, min_unique_domains_contacted=2, use_frac_c=F, rebuild=F)
 {
   if (is.null(ref_d)) {
     if (pool_tn == ref_tn) {

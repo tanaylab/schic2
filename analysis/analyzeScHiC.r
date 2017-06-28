@@ -27,19 +27,19 @@
 #
 #
 #
-library(Matrix)
-library(gtools)
+library(misha)
+#library(Matrix) 
+#library(gtools)
 library(plyr)
 library(dplyr)
 library(tidyr)
 library(KernSmooth)
 library(RColorBrewer)
 
-source(sprintf("%s/map3c/TG3C/analyzeHiC.r", Sys.getenv("PIPELINE_HOME")))
+source("../map3c/TG3C/analyzeHiC.r")
 source("utility_fxns.r")
 source("insulation.r")
 source("ordering.r")
-source("compartments.r")
 
 #===================================
 
@@ -85,12 +85,17 @@ sch_load_config <- function(spec_params_fn)
     #number of clusters for kmeans by decay
     sch_decay_k <<- 13
 
-    # groot
-    sch_groot <<- "/net/mraid14/export/data/db/tgdb/mm9/trackdb"
+    # data dir (misha db, redb, external files)
+    sch_data_dir <<- "/net/mraid14/export/data/db/tgdb/mm9/"
+    
+    # misha db dir
+    sch_groot <<- sprintf("%s/trackdb", sch_data_dir)
 
     # redb dir
-    sch_redb_dir <<- "/net/mraid14/export/tgdata/db/tgdb/mm9/seq/redb"
-    
+    sch_redb_dir <<- sprintf("%s/redb", sch_data_dir)
+
+    # external files dir
+    sch_extfiles_dir <<- sprintf("%s/rawdata", sch_data_dir)
 
     # colors
     twenty_colors <<- c("cadetblue", "lightsalmon", "mediumseagreen", "cornflowerblue","bisque3",
@@ -1273,51 +1278,37 @@ sch_create_pooled_track <- function(cells_dir, pool_track_nm=pool_tn, adj_base_d
 
 sch_create_pooled_track_wrapper <- function(nms, pool_nm)
 {
-    if (is.element(pool_tn, c("scell.nextera.pool_good_hyb_es_b", "scell.nextera.pool_good_hyb_es_c", "scell.nextera.pool_good_hyb_es"))) {
-        all_names = gsub("_", ".", gsub("scell.nextera.", "", grep("1CD", nms, value=T)), fixed=T)
-
-        all_dirs = unlist(sapply(sch_base_dir, function(x) { paste(x, all_names, sep="/") }))
-        all_dirs = all_dirs[file.exists(all_dirs)]
-    }
-    else if (pool_tn == "scell.nextera.pool_good_hyb_2i_es") {
-        all_names = gsub("_", ".", gsub("scell.nextera.", "", grep("1CDX|1CDU", nms, value=T, perl=T)), fixed=T)
-
-        all_dirs = unlist(sapply(sch_base_dir, function(x) { paste(x, all_names, sep="/") }))
-        all_dirs = all_dirs[file.exists(all_dirs)]
-    }
-    else if (pool_tn == "scell.nextera.pool_good_hyb_2i_idx_sort_es") {
-      all_names = gsub("_", ".", gsub("scell.nextera.", "", grep("1CDX|1CDU|1CDES", nms, value=T, perl=T)), fixed=T)
-      all_names = gsub("1CDES.", "1CDES_", all_names, fixed=T)
-      
-      all_dirs = unlist(sapply(sch_base_dir, function(x) { paste(x, all_names, sep="/") }))
-      all_dirs = all_dirs[file.exists(all_dirs)]
-    }
-    else if (pool_tn == "scell.nextera.pool_good_hyb_idx_sort_es") {
-      all_names = gsub("_", ".", gsub("scell.nextera.", "", grep("1CDES", nms, value=T, perl=T)), fixed=T)
-      all_names = gsub("1CDES.", "1CDES_", all_names, fixed=T)
-      
-      all_dirs = unlist(sapply(sch_base_dir, function(x) { paste(x, all_names, sep="/") }))
-      all_dirs = all_dirs[file.exists(all_dirs)]
-    }
-    else if (pool_tn == "scell.nextera.pool_good" | pool_tn=="scell.nextera.pool_good_es_c") {
-        all_nxt_dirs = gsub("_", ".", gsub("scell.nextera.", "", grep("NXT", nms, value=T)), fixed=T)
-        all_nst_dirs = gsub("_", ".", gsub("scell.nextera.", "", grep("NST", nms, value=T)), fixed=T)
-
-        all_dirs = c(paste(sch_base_dir, "2i", all_nxt_dirs, sep="/"), paste(sch_base_dir, "serum", all_nst_dirs, sep="/"))
+  if (haploid) {
+    all_nxt_dirs = paste(sch_base_dir, "2i", gsub("_", ".", gsub("scell.nextera.", "", grep("NXT", nms, value=T)), fixed=T), sep="/")
+    all_nst_dirs = paste(sch_base_dir, "serum", gsub("_", ".", gsub("scell.nextera.", "", grep("NST", nms, value=T)), fixed=T), sep="/")
+    
+    if (pool_tn == "scell.nextera.pool_good_hap_2i_serum_es") {
+      all_dirs = c(all_nxt_dirs, all_nst_dirs)
     }
     else if (pool_tn == "scell.nextera.pool_good_hap_2i_es") {
-        all_nxt_dirs = gsub("_", ".", gsub("scell.nextera.", "", grep("NXT", nms, value=T)), fixed=T)
-
-        all_dirs = paste(sch_base_dir, "2i", all_nxt_dirs, sep="/")
+      all_dirs = all_nxt_dirs
     }
-    else if (pool_tn == "scell.nextera.pool_good_npc_c") {
-      all_names = gsub("_", ".", gsub("scell.nextera.", "", grep("NPC", nms, value=T)), fixed=T)
-
-      all_dirs = unlist(sapply(sch_base_dir, function(x) { paste(x, all_names, sep="/") }))
-      all_dirs = all_dirs[file.exists(all_dirs)]
+    else if (pool_tn == "scell.nextera.pool_good_hap_serum_es") {
+      all_dirs = all_nst_dirs
     }
-    message(sprintf("======== creating pool track %s... from %d files" ,pool_nm, length(all_dirs)))
-    sch_create_pooled_track(all_dirs, pool_track_nm=pool_nm, adj_base_dir="")
+  }
+  else {
+    nms_regexp = switch(pool_tn,
+      scell.nextera.pool_good_hyb_2i_sort_es="1CDX|1CDU",
+      scell.nextera.pool_good_hyb_serum_es="1CDS",
+      scell.nextera.pool_good_hyb_2i_all_es="1CDX|1CDU|1CDES",
+      scell.nextera.pool_good_hyb_2i_no_sort_es="1CDES")
+
+    all_names = gsub("_", ".", gsub("scell.nextera.", "", grep(nms_regexp, nms, value=T, perl=T)), fixed=T)
+    all_names = gsub("1CDES.", "1CDES_", all_names, fixed=T)
+    
+    all_dirs = unlist(sapply(sch_base_dir, function(x) { paste(x, all_names, sep="/") }))
+    all_dirs = all_dirs[file.exists(all_dirs)]
+
+  }
+
+  message(sprintf("======== creating pool track %s... from %d files" ,pool_nm, length(all_dirs)))
+  sch_create_pooled_track(all_dirs, pool_track_nm=pool_nm, adj_base_dir="")
 }
 
 

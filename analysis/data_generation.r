@@ -24,9 +24,9 @@ wrapper_sch_calc_tad_exact_borders_insu_ds_trian_discard_unear <- function(chrom
 
 
 ####
-wrapper_sch_calc_dixon_borders_insu_ds_trian <- function(chroms = paste0("chr", sch_chroms), n_ds=8, rebuild=F, scale=3e5, res=0, discard_below=sch_remove_near_dist, name=sprintf("_Dixon_tad_borders_gt%s", n2str(sch_remove_near_dist)), ifn=sprintf("%s/dixon2012/dixon2012_mESC_boundaries.txt", sch_table_dir), max_border_size=80e3)
+wrapper_sch_calc_dixon_borders_insu_ds_trian <- function(chroms = paste0("chr", sch_chroms), n_ds=8, rebuild=F, scale=3e5, res=0, discard_below=sch_remove_near_dist, name=sprintf("_Dixon_tad_borders_gt%s", n2str(sch_remove_near_dist)), max_border_size=80e3)
 {
-  b = read.delim(ifn, header=T)
+  b = read.delim(dixon_borders_fn, header=T)
   b = b[b$end - b$start <= max_border_size, ]
   b = intervals.centers(b)
   
@@ -66,37 +66,39 @@ create_pooled_hap_tracks <- function()
   good_dirs = c(paste("2i", good_nxt_dirs, sep="/"), paste("serum", good_nst_dirs, sep="/"))
 
   message("Pooling all...")
-  sch_create_pooled_track(all_dirs, pool_track_nm="scell.nextera.pool_all_es_c", adj_base_dir=sch_base_dir)
+  sch_create_pooled_track(all_dirs, pool_track_nm="scell.nextera.pool_all_hap_2i_serum_es", adj_base_dir=sch_base_dir)
 
   message("Pooling good...")
-  sch_create_pooled_track(good_dirs, pool_track_nm="scell.nextera.pool_good_es_c", adj_base_dir=sch_base_dir)
+  sch_create_pooled_track(good_dirs, pool_track_nm="scell.nextera.pool_good_hap_2i_serum_es", adj_base_dir=sch_base_dir)
 
   message("Pooling all 2i...")
-  sch_create_pooled_track(all_nxt_dirs, pool_track_nm="scell.nextera.pool_all_2i_es", adj_base_dir=paste(sch_base_dir, "2i", sep="/"))
+  sch_create_pooled_track(all_nxt_dirs, pool_track_nm="scell.nextera.pool_all_hap_2i_es", adj_base_dir=paste(sch_base_dir, "2i", sep="/"))
 
   message("Pooling good 2i...")
-  sch_create_pooled_track(good_nxt_dirs, pool_track_nm="scell.nextera.pool_good_2i_es", adj_base_dir=paste(sch_base_dir, "2i", sep="/"))
+  sch_create_pooled_track(good_nxt_dirs, pool_track_nm="scell.nextera.pool_good_hap_2i_es", adj_base_dir=paste(sch_base_dir, "2i", sep="/"))
 
   message("Pooling all serum...")
-  sch_create_pooled_track(all_nst_dirs, pool_track_nm="scell.nextera.pool_all_serum_es", adj_base_dir=paste(sch_base_dir, "serum", sep="/"))
+  sch_create_pooled_track(all_nst_dirs, pool_track_nm="scell.nextera.pool_all_hap_serum_es", adj_base_dir=paste(sch_base_dir, "serum", sep="/"))
 
   message("Pooling good serum...")
-  sch_create_pooled_track(good_nst_dirs, pool_track_nm="scell.nextera.pool_good_serum_es", adj_base_dir=paste(sch_base_dir, "serum", sep="/"))
+  sch_create_pooled_track(good_nst_dirs, pool_track_nm="scell.nextera.pool_good_hap_serum_es", adj_base_dir=paste(sch_base_dir, "serum", sep="/"))
 
 }
 
 ####
 create_pooled_hyb_tracks <- function()
 {
-  create_pooled_hyb_tracks_helper(all_nm="scell.nextera.pool_all_hyb_2i_idx_sort_es", good_nm="scell.nextera.pool_good_hyb_2i_idx_sort_es", pattern="1CDU|1CDX|1CDES")
+  create_pooled_hyb_tracks_helper(all_nm="scell.nextera.pool_all_hyb_2i_all_es", good_nm="scell.nextera.pool_good_hyb_2i_all_es", pattern="1CDU|1CDX|1CDES")
 
-  create_pooled_hyb_tracks(all_nm="scell.nextera.pool_all_hyb_idx_sort_es", good_nm="scell.nextera.pool_good_hyb_idx_sort_es", pattern="1CDES")
+  create_pooled_hyb_tracks(all_nm="scell.nextera.pool_all_hyb_2i_no_sort_es", good_nm="scell.nextera.pool_good_hyb_2i_no_sort_es", pattern="1CDES")
+
+  create_pooled_hyb_tracks(all_nm="scell.nextera.pool_all_hyb_2i_sort_es", good_nm="scell.nextera.pool_good_hyb_2i_sort_es", pattern="1CDU|1CDX")
 
   create_pooled_hyb_tracks(all_nm="scell.nextera.pool_all_hyb_serum_es", good_nm="scell.nextera.pool_good_hyb_serum_es", pattern="1CDS")
 }
 
 ##
-create_pooled_hyb_tracks_helper <- function(all_nm="scell.nextera.pool_all_hyb_es_b", good_nm="scell.nextera.pool_good_hyb_es_b", pattern="1CD")
+create_pooled_hyb_tracks_helper <- function(all_nm="scell.nextera.pool_all_hyb_es", good_nm="scell.nextera.pool_good_hyb_es", pattern="1CD")
 {
   all_names = gsub("_", ".", gsub("scell.nextera.", "", grep("1CD", rownames(sch_chrom_stat), value=T)), fixed=T)
   good_names = gsub("_", ".", gsub("scell.nextera.", "", grep("1CD", sch_good_cells, value=T)), fixed=T)
@@ -115,10 +117,10 @@ create_pooled_hyb_tracks_helper <- function(all_nm="scell.nextera.pool_all_hyb_e
 
 
   message("Pooling all hyb ES...")
-  sch_create_pooled_track(all_hyb_es_dirs, pool_track_nm=all_nm, adj_base_dir=NULL, adj_out=paste(base_dir, "/combined_all_hyb_es_adj", sep="/"))
+  sch_create_pooled_track(all_hyb_es_dirs, pool_track_nm=all_nm, adj_base_dir=NULL)
 
   message("Pooling good hyb ES...")
-  sch_create_pooled_track(good_hyb_es_dirs, pool_track_nm=good_nm, adj_base_dir=NULL, adj_out=paste(base_dir, "/combined_good_hyb_es_adj", sep="/"))
+  sch_create_pooled_track(good_hyb_es_dirs, pool_track_nm=good_nm, adj_base_dir=NULL)
 
 }
 
@@ -149,3 +151,48 @@ import_rna_seq_fastq <- function(base_dir="/net/mraid14/export/tgdata/db/tgdb/mm
     }
   }
 }
+
+########################
+create_ctcf_motif_tracks <- function(rebuild=F, base_dir="motifs", tns=c("CTCF_forward", "CTCF_reverse"), keys=1:2, binsize=1)
+{
+  
+  gdir.create(base_dir, showWarnings=F)
+
+  for (i in seq_along(tns)) {
+    otn = sprintf("%s.%s", base_dir, tns[i])
+    if (rebuild) {
+      gtrack.rm(otn, T)
+    }
+    if (!gtrack.exists(otn)) {
+      message(sprintf("Creating %s track...", otn))
+      gtrack.create_pwm_energy(otn, "CTCF pwm track", 'ctcf', keys[i], 0, binsize)
+    }
+  }
+
+}
+
+#######
+#
+gen_post_mitotic_insu_and_shuffle <- function(mit_tn=paste0(pool_tn, "_group_1_post_m"), min_diag_d=8192, res=2e4, ignore_below=1024)
+{
+  new_track=sprintf("%s_ins_discard%d_%ds", mit_tn, min_diag_d, ins_scale)
+  if (gtrack.exists(new_track)) {
+    gtrack.rm(new_track, T)
+  }
+  gtrack.2d.gen_insu_track(mit_tn, ins_scale, res=res, min_diag_d=min_diag_d, new_track=new_track, ignore_below=ignore_below)
+
+  options(shaman.sge_support=1)
+  shaman_shuffle_hic_track(track_db=sch_groot, obs_track_nm=mit_tn, work_dir=sprintf("%s/", sch_rdata_dir))
+
+  mit_s_tn = sprintf("%s_shuffle", mit_tn)
+
+  new_track=sprintf("%s_ins_discard%d_%ds", mit_s_tn, min_diag_d, ins_scale)
+  if (gtrack.exists(new_track)) {
+    gtrack.rm(new_track, T)
+  }
+  gtrack.2d.gen_insu_track(mit_s_tn, ins_scale, res=res, min_diag_d=min_diag_d, new_track=new_track, ignore_below)
+  
+}
+
+
+

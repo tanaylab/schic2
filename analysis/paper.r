@@ -1,8 +1,6 @@
 source("analyzeScHiC.r")
-source("plots.r")
 source("data_generation.r")
-source("compartments.r")
-library("plotrix")
+
 library("ggplot2")
 library("shaman")
 
@@ -31,6 +29,7 @@ pointsize <<- 7
 build_stats <- function()
 {
   import_rna_seq_fastq()
+  create_ctcf_motif_tracks()
   
   create_pooled_tracks()
   sch_gen_group_pools()
@@ -113,7 +112,7 @@ fig3 <- function()
 fig4 <- function()
 {
   fig1_decay_sorted_hm(haploid=T)
-  r = fig_s_a_score_ideograms(tn=pool_tn, ref_tn="scell.nextera.pool_good_hyb_2i_idx_sort_es", lim=c(0.54, 0.78))
+  r = fig_s_a_score_ideograms(tn=pool_tn, ref_tn="scell.nextera.pool_good_hyb_2iall_es", lim=c(0.54, 0.78))
   r = plot_domains_weighted_a_score_across_groups()
   fig_s_pc_pc_contact_enrich(zlim=c(-1, 1), exp_zlim=c(-9.8, -7.8))
 }
@@ -658,7 +657,7 @@ fig3_intra_domain_decay_by_tor_haploid <- function(rebuild=F)
   fig3_intra_domain_decay_by_tor(cond_cols=sch_cond_colors, rebuild=rebuild, width_per_panel=fig_factor*205, height_per_panel=fig_factor*160)
 }
 
-#fig_s_compare_group_insu_trends = function(  g_tns=c("scell.nextera.pool_group_2_g1_diploid", "scell.nextera.pool_group_3_early_s_diploid", "scell.nextera.pool_group_4_mid_s_g2_diploid"), g_nms=c("G1", "early-S", "mid-S/G2"), chroms=c(1:5), xlim=c(32e6, 38e6), ylim_q=c(0.001, 0.999), gcols=c('blue', 'red', 'darkgreen'), height_per_chrom=60, width=280, scope=NULL)
+
 fig_s_compare_group_insu_trends <- function(  g_nms = c('post_m', 'g1', 'early_s', 'mid_s_g2', 'pre_m'), chroms=c(1:5), xlim=c(32e6, 38e6), ylim_q=c(0.001, 0.999), gcols=mini_qualitative_colors[1:5], height_per_chrom=60, width=280, scope=NULL, res=1000, selected_groups=2:4)
 {
   g_nms = g_nms[selected_groups]
@@ -714,7 +713,6 @@ fig_s_compare_group_insu_trends <- function(  g_nms = c('post_m', 'g1', 'early_s
   dev.off()
 }
 
-#fig_s_compare_conv_ctcf_loops_between_groups = function(g_tns=c("scell.nextera.pool_group_2_g1_diploid", "scell.nextera.pool_group_3_early_s_diploid", "scell.nextera.pool_group_4_mid_s_g2_diploid"), g_nms=c("G1", "early-S", "mid-S/G2"), chroms=sch_chroms, gcols=c('blue', 'red', 'darkgreen'), size=220, min_d_score=60, score_tn="scell.nextera.pool_good_hyb_es_b_score_k100", conv_ctcf=NULL, enr=NULL, pool_loop_extends=c(1e4, 3e4), ctcf_chip_q=0.99, ex_chroms=c(1:5), xlim=c(32e6, 38e6))
 fig_s_compare_conv_ctcf_loops_between_groups <- function(g_nms = c('post_m', 'g1', 'early_s', 'mid_s_g2', 'pre_m'), chroms=sch_chroms, gcols=mini_qualitative_colors[1:5], size=220, min_d_score=60, score_tn=paste0(pool_tn, "_score"), conv_ctcf=NULL, enr=NULL, point_size=0.05, loop_size=4, loop_stroke=1, pool_loop_extends=c(1e4, 3e4), ctcf_chip_q=0.99, ex_chroms=c(1:5), xlim=c(26e6, 44e6), selected_groups=2:4, plot_knn_maps=T, plot_domains=F, alpha=0.5, cex=0.5*fig_factor, min_a_contacts=2)
 {
   if (is.null(conv_ctcf)) {
@@ -1149,9 +1147,6 @@ fig_s_pool_knn_norm_cis_maps <- function(chroms=sch_chroms)
 
 plot_knn_norm_cis_map <- function(chr=19, coords=NULL, score_tn=paste0(pool_tn, "_lowerres_score"), bp_per_px=100e3, conv_ctcf=NULL, ctcf_chip_q=0.9, plot_loops=F, loop_size=3, loop_stroke=1, plot_also_domains=F, extend_loop_by=1e4, min_d=60, points=NULL, band=NULL, point_size=0.1, grid_every=NULL)
 {
-  library(shaman)
-  message(packageVersion("shaman"))
-  message(packageVersion("misha"))
   .update_shaman_options()
   
   if (is.null(coords)) {
@@ -1526,7 +1521,7 @@ fig_s_trans_ab <- function(sw=101, width=380, height=180, cex=0.4, haploid=F, co
 
 }
 
-fig_s_mitotic_ins <- function(mi="scell.nextera.pool_good_hyb_2i_idx_sort_es_group_1_post_m_ins_discard8192_300000s", msi="scell.nextera.pool_good_hyb_2i_idx_sort_es_group_1_post_m_shuffle_ins_discard8192_300000s", chrom="chr1", xlim = c(32e6, 38e6), ylim=c(1, 3.6), chroms=sch_chroms, scale_distrib=F, height=160)
+fig_s_mitotic_ins <- function(mi="scell.nextera.pool_good_hyb_2i_all_es_group_1_post_m_ins_discard8192_300000s", msi="scell.nextera.pool_good_hyb_2i_all_es_group_1_post_m_shuffle_ins_discard8192_300000s", chrom="chr1", xlim = c(32e6, 38e6), ylim=c(1, 3.6), chroms=sch_chroms, scale_distrib=F, height=160)
 {
   ins = gextract(ins_tn, mi, msi, intervals=gintervals(chroms), iterator=2e4, colnames=c('gi', 'mi', 'msi'))
 
@@ -1883,13 +1878,13 @@ collect_fendchain_stats <- function(cis_cutoff=1e3, fns_regexp="1CDU|1CDX", redb
 
 # compare insulation of different tracks
 fig_s_compare_tracks_insu <- function(tns=c(
-                                        "scell.nextera.pool_good_hyb_2i_idx_sort_es",
-                                        "scell.nextera.pool_good_hyb_2i_es",
-                                        "scell.nextera.pool_good_hyb_idx_sort_es",
+                                        "scell.nextera.pool_good_hyb_2i_all_es",
+                                        "scell.nextera.pool_good_hyb_2i_sort_es",
+                                        "scell.nextera.pool_good_hyb_no_sort_es",
                                         "scell.nextera.pool_good_hyb_serum_es", 
-                                        "scell.nextera.pool_good_es_c",
-                                        "scell.nextera.pool_good_serum_es",
-                                        "scell.nextera.pool_good_2i_es",
+                                        "scell.nextera.pool_good_hap_2i_serum_es",
+                                        "scell.nextera.pool_good_hap_serum_es",
+                                        "scell.nextera.pool_good_hap_2i_es",
                                         "hic.ES.tg_esc"),
                                       nms=c('dip', 'dip_sort', 'dip_nosort', 'dip_serum', 'hap', 'hap_serum', 'hap_2i', 'ens'), pairs=matrix(c(1, 8, 1, 5, 1, 4, 2, 3, 7, 6), 5, 2, byrow=T), chroms=sch_chroms, ins_res=1e3, sample_every=10e3, cex=0.1*fig_factor, alpha=0.4, lim=c(1,9), scale=ins_scale, discard_below=1000, size=220)
 {
@@ -1933,7 +1928,7 @@ fig_s_compare_tracks_insu <- function(tns=c(
 
 ########################
 # A-score plots
-fig_s_a_score_ideograms <- function(tn=pool_tn, ref_tn="scell.nextera.pool_good_hyb_2i_idx_sort_es",  min_cis=2e6, vfunc="weighted.sum", min_total_d_contacts=20, colspec=rev(brewer.pal(n=11, "RdYlBu")[c(1:4, 8:11)]), d=NULL, nshades=1000, chroms=paste0("chr", sch_chroms), calc_frac_a=F, pch_col=darkblue_col, alpha=0.2, cex=0.5 * fig_factor, rebuild=F, lim=c(0.54, 0.78), black_domains=NULL) 
+fig_s_a_score_ideograms <- function(tn=pool_tn, ref_tn="scell.nextera.pool_good_hyb_2i_all_es",  min_cis=2e6, vfunc="weighted.sum", min_total_d_contacts=20, colspec=rev(brewer.pal(n=11, "RdYlBu")[c(1:4, 8:11)]), d=NULL, nshades=1000, chroms=paste0("chr", sch_chroms), calc_frac_a=F, pch_col=darkblue_col, alpha=0.2, cex=0.5 * fig_factor, rebuild=F, lim=c(0.54, 0.78), black_domains=NULL) 
 {
   stopifnot(!calc_frac_a)
   if (is.null(d)) {
@@ -2007,19 +2002,19 @@ fig_s_a_score_ideograms <- function(tn=pool_tn, ref_tn="scell.nextera.pool_good_
 
 ###########
 # compare domains A-score based on pool of singles domains
-fig_s_compare_tracks_a_score <- function(ref_tn="scell.nextera.pool_good_hyb_2i_idx_sort_es", ref_nm='dip',
+fig_s_compare_tracks_a_score <- function(ref_tn="scell.nextera.pool_good_hyb_2i_all_es", ref_nm='dip',
                                          tns=c(
-                                           "scell.nextera.pool_good_hyb_2i_idx_sort_es",
-                                           "scell.nextera.pool_good_hyb_2i_es",
-                                           "scell.nextera.pool_good_hyb_idx_sort_es",
+                                           "scell.nextera.pool_good_hyb_2i_all_es",
+                                           "scell.nextera.pool_good_hyb_2i_sort_es",
+                                           "scell.nextera.pool_good_hyb_2i_no_sort_es",
                                            "scell.nextera.pool_good_hyb_serum_es",
-                                           "scell.nextera.pool_good_es_c",
-                                           "scell.nextera.pool_good_serum_es",
-                                           "scell.nextera.pool_good_2i_es",
+                                           "scell.nextera.pool_good_hap_2i_serum_es",
+                                           "scell.nextera.pool_good_hap_serum_es",
+                                           "scell.nextera.pool_good_hap_2i_es",
                                            "hic.ES.tg_esc",
-                                           "scell.nextera.pool_good_hyb_2i_idx_sort_es_group_2_g1",
-                                           "scell.nextera.pool_good_hyb_2i_idx_sort_es_group_3_early_s",
-                                           "scell.nextera.pool_good_hyb_2i_idx_sort_es_group_4_mid_s_g2"),
+                                           "scell.nextera.pool_good_hyb_2i_all_es_group_2_g1",
+                                           "scell.nextera.pool_good_hyb_2i_all_es_group_3_early_s",
+                                           "scell.nextera.pool_good_hyb_2i_all_es_group_4_mid_s_g2"),
                                          nms=c('dip', 'dip_sort', 'dip_nosort', 'dip_serum', 'hap', 'hap_serum', 'hap_2i', 'ens', 'dip_2i_g1', 'dip_2i_early_s', 'dip_2i_mid_s_g2'), pairs=matrix(c(1, 8, 1, 5, 1,4, 2, 3, 7, 6, 9, 10, 9, 11, 10, 11), 8, 2, byrow=T), vfunc="weighted.sum", cex=0.2*fig_factor, alpha=0.5, lim=NULL, col_dict=list('A'='red', 'B'='black'), size=240, rebuild=F)
 {
   x = calc_domains_a_score(tn=ref_tn, vfunc=vfunc, d=NULL, use_trans=T, rebuild=rebuild)
@@ -2087,7 +2082,7 @@ fig_s_hap_dip_pc_contig_table <- function(size=280 * fig_factor, cex=0.5 * fig_f
 
 ##
 # params fit haploid. see below call for diploid
-plot_domains_weighted_a_score_across_groups <- function(ref_tn="scell.nextera.pool_good_hyb_2i_idx_sort_es", min_cis_dist=2e6, ra=NULL, vfunc="weighted.sum", min_pool_dom_comp_contacts=20, min_domain_contacts=4, min_unique_domains_contacted=3, size=170, pch_col=darkblue_col, alpha=0.2, cex=0.4*fig_factor, min_obs_per_group=10, frac_tab_zmax=0.4, use_downsampled=T, freq_bin=0.03, ab_colspec=diver_dark_mid_colspec, freq_colspec=seq_colspec, freq_lim=c(0.54, 0.78), nshades=1000, order_doms_by="mean_g4", n_pc=20, n_clusters=30, cells_per_slice=101, ab_lim=NULL, ab_score_bin=0.04, mean_sd_by_slice=NULL, use_frac_c=F, sd_bp_ylim=c(0.01, 0.07), rebuild=F)
+plot_domains_weighted_a_score_across_groups <- function(ref_tn="scell.nextera.pool_good_hyb_2i_all_es", min_cis_dist=2e6, ra=NULL, vfunc="weighted.sum", min_pool_dom_comp_contacts=20, min_domain_contacts=4, min_unique_domains_contacted=3, size=170, pch_col=darkblue_col, alpha=0.2, cex=0.4*fig_factor, min_obs_per_group=10, frac_tab_zmax=0.4, use_downsampled=T, freq_bin=0.03, ab_colspec=diver_dark_mid_colspec, freq_colspec=seq_colspec, freq_lim=c(0.54, 0.78), nshades=1000, order_doms_by="mean_g4", n_pc=20, n_clusters=30, cells_per_slice=101, ab_lim=NULL, ab_score_bin=0.04, mean_sd_by_slice=NULL, use_frac_c=F, sd_bp_ylim=c(0.01, 0.07), rebuild=F)
 {
   if (is.null(ra)) {
     ra = calc_domains_weighted_a_score_across_cells(ref_tn=ref_tn, min_cis_dist=min_cis_dist, vfunc=vfunc, min_domain_contacts=min_domain_contacts, min_unique_domains_contacted=min_unique_domains_contacted, use_frac_c=use_frac_c, rebuild=rebuild)
@@ -2332,7 +2327,7 @@ plot_domains_weighted_a_score_across_groups_diploid <- function()
 }
 
 ###############
-fig2_index_sort_metrics <- function(idir=sch_table_dir, ifns=paste0("Index_plate_", c(1, 3:8), ".txt"), nm_pref=paste0("scell.nextera.1CDES_p", c(1, 3:8), "_"), columns=c(10, 11), col_names=c('hoechst', 'geminin'), width=320, height=220, pch_col=darkblue_col, cex=0.3*fig_factor, plate_nms=paste0('p', c(1, 3:8)), colspec=rev(brewer.pal(n=11, "RdYlBu")[c(1:4, 8:11)]), only_good=T) 
+fig2_index_sort_metrics <- function(idir=sprintf("%s/index_sort_tables", sch_extfiles_dir), ifns=paste0("Index_plate_", c(1, 3:10), ".txt"), nm_pref=paste0("scell.nextera.1CDES_p", c(1, 3:10), "_"), columns=c(10, 11), col_names=c('hoechst', 'geminin'), width=320, height=220, pch_col=darkblue_col, cex=0.2*fig_factor, plate_nms=paste0('p', c(1, 3:10)), colspec=rev(brewer.pal(n=11, "RdYlBu")[c(1:4, 8:11)]), only_good=T) 
 {
   nms = do.call("c", lapply(nm_pref, grep, x=rownames(sch_decay_metrics), value=T))
 
