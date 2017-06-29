@@ -24,11 +24,6 @@
 # downsample K contacts independently in each triangle of a locus (A+B1+B2)
 sch_calc_insu_ds_trian <<- function(chrom, n_ds=30, coords=NULL, coords_nm="", discard_below=1000, return_data=T, rebuild=F, scale=insu_scale, res=insu_res)
 {
-  #gdb.init("/net/mraid14/export/data/db/tgdb/mm9/trackdb/")
-  #setwd("/home/lubling/workspace/tlsrc/analysis/3c/scHiC/")
-  #source("analyzeScHiC.r")
-
-  #sch_load_tables("/home/lubling/schic_res/serum_2i/serum_2i_params.r")
   sch_chrom_stat <<- read.table(sprintf("%s/chrom_stat.txt", sch_table_dir),header=T)
   
   
