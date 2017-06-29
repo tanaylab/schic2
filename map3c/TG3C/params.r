@@ -4,7 +4,8 @@ init_params = function(fn)
 {
   t = read.table(fn, sep="=", fill=T)
 
-  params = as.character(t[,2])
+  browser()
+  params = sapply(as.character(t[,2]), FUN=function(v) { system2("echo", v, stdout=T) })
   names(params) = t[,1]
   assign("TG3C_miss_conf_err", FALSE, envir=.GlobalEnv)
 
