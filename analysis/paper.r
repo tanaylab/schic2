@@ -9,7 +9,7 @@ options(gmultitasking=F)
 
 
 # params for paper
-plot_type <<- "ps"
+plot_type <<- "png"
 rel_odir <<- "paper"
 fig_factor <<- 2.3
 #fres <<- 120
@@ -49,8 +49,10 @@ build_stats <- function()
   gen_post_mitotic_insu_and_shuffle()
 }
 
+
 paper_figs <- function()
 {
+  sch_load_tables("config/hyb_2i_params.r")
   fig_gw_cmap()
 
   fig1()
@@ -69,7 +71,7 @@ paper_figs <- function()
   dft  = compile_features_table()
   
   # load haploid settings
-  sch_load_tables("~/schic_res/serum_2ic/serum_2i_271116_params.r")
+  sch_load_tables("config/hap_serum_2i_params.r")
   fig4()
 
   exfig8()
@@ -108,7 +110,6 @@ fig3 <- function()
 }
 
 # load the haploid settings before producing Fig4: 
-#   sch_load_tables("~/schic_res/serum_2ic/serum_2i_271116_params.r")
 fig4 <- function()
 {
   fig1_decay_sorted_hm(haploid=T)
@@ -513,14 +514,6 @@ fig3_conv_ctcf_loops_by_cc <- function(width=fig_factor*220, height_per_panel=fi
 fig3_conv_ctcf_loops_by_cc_haploid <- function(rebuild=F, conv_ctcf=NULL)
 {
   fig3_conv_ctcf_loops_by_cc(rebuild=rebuild, conv_ctcf=conv_ctcf, group_size_for_boxplot=70, boxplot_comp_inds=matrix(c(1,7,7,13,13,18), 3, 2, byrow=T), show_pvals_as_nums=T, score_tn=paste0(pool_tn, "_score"), collapse_q=c(0.001, 0.999), haploid=T, en_boxplot_ylim=c(-0.5, 2.8))
-}
-
-fig_s_rao_loops_enr_by_cc <- function(band=c(1e5, 1e6), rebuild=F)
-{
-  rao = read.table("~/schic_res/hyb_mm9_2i/tables/rao2014/GSE63525_CH12-LX_HiCCUPS_looplist.txt", header=T, sep="\t")
-  rao_l = gintervals.2d(rao$chr1, rao$x1, rao$x2, rao$chr2, rao$y1, rao$y2)
-
-  fig3_conv_ctcf_loops_by_cc(external_loops=rao_l, fn_pref=sprintf("%s/%s/fig_s_rao_loops_",sch_fig_dir, rel_odir), band=band, name="rao_", rebuild=rebuild)
 }
 
 fig3_conv_ctcf_group_enr_plots <- function (conv_ctcf=NULL, ctcf_chip_q=0.99, min_score=60, extend_by=50e3, nbins=c(7, 31), zlim=c(-1, 1), colspec=diver_colspec)
@@ -2056,8 +2049,12 @@ fig_s_compare_tracks_a_score <- function(ref_tn="scell.nextera.pool_good_hyb_2i_
 # Haploid - Diploid pc contig table
 fig_s_hap_dip_pc_contig_table <- function(size=280 * fig_factor, cex=0.5 * fig_factor, zlim=c(0, 0.02), colspec=c('white', seq_colspec))
 {
-  hap = read.table("~/schic_res/serum_2ic/tables/domain_ord_by_mean_g4_A_assoc_with_new_cells.txt", header=T)
-  dip = read.table("~/schic_res/hyb_mm9_2i_is/tables/domain_ord_by_mean_g4_A_assoc.txt", header=T)
+  sch_load_config("config/hap_serum_2i_params.r")
+  hap = read.table(sprintf("%s/domain_ord_by_mean_g4_A_assoc_with_new_cells.txt", sch_table_dir), header=T)
+
+  sch_load_config("config/hyb_2i_params.r")
+  dip = read.table(sprintf("%s/domain_ord_by_mean_g4_A_assoc_with_new_cells.txt", sch_table_dir), header=T)
+  
   nn = gintervals.neighbors.wrap(hap, dip, maxneighbors=100, maxdist=0)
   hdt = table(nn$pc_1, nn$pc_2) / nrow(nn)
 
