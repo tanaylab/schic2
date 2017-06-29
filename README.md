@@ -37,7 +37,8 @@ Processing starts with a pair of fastq files for each cell. The multiplexed fast
 
 Detailed instructions how to use use the complete pipeline are available in the _map3c_ directory [README](https://bitbucket.org/tanaylab/schic2/src/895034bfccc8ac7a240d3e4181216f2b8fa31903/map3c/README.md?at=default&fileviewer=file-view-default) file.
 
-The final step of the pipeline is to upload the contact map of a cell into the genomic database. We supply all contact maps below to allow you to skip rerunning the sequence processing step:
+The final step of the pipeline is to upload the contact map of a cell into the genomic database. We supply all contact maps below to allow you to spare you from rerunning the sequence processing step if you prefer:
+
 |Cells     |Condition  |Batches|Link   |Size |
 |:--------:|:---------:|:--------:|:----:|:--------:|
 |Haploids |2i |All| [gz](http://compgenomics.weizmann.ac.il/files/archives/schic_hap_2i_adj_files.tar.gz)|1.2 Gb|
