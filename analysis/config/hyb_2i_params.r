@@ -1,4 +1,4 @@
-    # data dir (misha db, redb, external files)
+    # UPDATE REQUIRED. data dir (were you unpacked the genomic database archive. Contains the misha db, redb, external files)
     sch_data_dir <<- "/net/mraid14/export/data/db/tgdb/schic2_mm9/"
     
     # misha db dir
@@ -14,7 +14,7 @@
     sch_track_base <<- "scell.nextera.1CDU|scell.nextera.1CDX|scell.nextera.1CDES"
 
     # batch file name
-    sch_batch_fn <<- "hyb_300317_2i_is_es_batch.txt"
+    sch_batch_fn <<- "hyb_2i_es_batch.txt"
 
     # pool_tn
     pool_tn <<- "scell.nextera.pool_good_hyb_2i_all_es"
@@ -23,18 +23,22 @@
     ins_scale <<- 3e5
     ins_tn <<- sprintf("%s_ins_%ds", pool_tn, ins_scale)
     
-    # base dir
-    sch_base_dir <<- c("/net/mraid14/export/tgdata/db/tgdb/mm9/rawdata/scell_hic/cells_hyb_apr_2016/processed",
-        "/net/mraid14/export/tgdata/db/tgdb/mm9/rawdata/scell_hic/cells_hyb_feb_2016/processed", 
-	"/net/mraid14/export/tgdata/db/tgdb/mm9/rawdata/scell_hic/cells_hyb_idx_sort/processed")
+    # UPDATE REQUIRED. Directory (or several ones) holding the output of the sequence processing pipeline, or where you unpacked the supplied contact maps.
+    sch_base_dir <<- "/net/mraid14/export/data/users/lubling/datasets/scell"
 
-    #table directory
-    sch_table_dir <<- "/net/mraid14/export/data/users/lubling/datasets/scell/results/esh/hyb_mm9_2i_is/tables"
-    sch_fig_dir <<- "/net/mraid14/export/data/users/lubling/datasets/scell/results/esh/hyb_mm9_2i_is/figs"
-    sch_rdata_dir <<- "/net/mraid14/export/data/users/lubling/datasets/scell/results/esh/hyb_mm9_2i_is/rdata"
+    # UPDATE REQUIRED. analysis output directory
+    sch_work_dir <<- "/net/mraid14/export/data/users/lubling/datasets/scell/results/esh/diploid"
 
+    # table directory
+    sch_table_dir <<- sprintf("%s/tables", sch_work_dir)
+
+    # figures directory
+    sch_fig_dir <<- sprintf("%s/figs", sch_work_dir)
+
+    # cached data directory
+    sch_rdata_dir <<- sprintf("%s/rdata", sch_work_dir)
+                                        
     #max_chromosome coverage bias (for filtering)
-    #sch_karyo_z_thresh <<- 100
     sch_karyo_log2_enr_thresh <<- 1
 
     #max self level
@@ -69,12 +73,12 @@
     sch_pre_m_intercept <<- 1
 
     # a/b clustering ofn prefix
-    # sch_ab_cluster_fn_pref <<- sprintf("%s/pool_domains_cluster_trans_area_kmeans_k2_d-10.000000_breaks.around.median_q.disp0.010000_2cols_min-5", sch_table_dir)
-    sch_ab_cluster_fn_pref <<- sprintf("%s/paper/fig_s_domains_trans_cluster_area", sch_fig_dir)
+    sch_ab_cluster_fn_pref <<- sprintf("%s/paper/fig_s_domains_trans_cluster_ws", sch_fig_dir)
 
     # epigen track names
     sch_rna_tn_rep1 <<- "rna.129_Cast.ES.pf_rep1"
     sch_rna_tn_rep2 <<- "rna.129_Cast.ES.pf_rep2"
+
     sch_ctcf_tns <<- c("Encode.esb4.ctcf.rep1", "Encode.esb4.ctcf.rep2")
 
     # dixon boundaries file name
