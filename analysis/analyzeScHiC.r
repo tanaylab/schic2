@@ -197,6 +197,10 @@ sch_load_config <- function(spec_params_fn)
 
 sch_build_all <- function(spec_params_fn)
 {
+    system(sprintf("mkdir -p %s", sch_table_dir))
+    system(sprintf("mkdir -p %s", sch_fig_dir))
+    system(sprintf("mkdir -p %s", sch_rdata_dir))
+    
     sch_load_config(spec_params_fn)
     sch_create_glob_decay()
     sch_create_glob_decay_res()

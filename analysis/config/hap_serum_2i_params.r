@@ -1,4 +1,4 @@
-    # data dir (misha db, redb, external files)
+    # UPDATE REQUIRED. data dir (were you unpacked the genomic database archive. Contains the misha db, redb, external files)
     sch_data_dir <<- "/net/mraid14/export/data/db/tgdb/schic2_mm9/"
     
     # misha db dir
@@ -14,7 +14,7 @@
     sch_track_base <<- "scell.nextera.N[SX]T_[0-9]"
 
     # batch file name
-    sch_batch_fn <<- "cell_batch_NXT_NST_with_cond.txt"
+    sch_batch_fn <<- "hap_serum_2i_es_batch.txt"
 
     # pool_tn
     pool_tn <<- "scell.nextera.pool_good_hap_2i_serum_es"
@@ -23,21 +23,26 @@
     ins_scale <<- 3e5
     ins_tn <<- sprintf("%s_ins_%ds", pool_tn, ins_scale)
 
-    # base dir
+    # UPDATE REQUIRED. Directory (or several ones) holding the output of the sequence processing pipeline, or where you unpacked the supplied contact maps. 
     sch_base_dir <<- "/net/mraid14/export/data/users/lubling/datasets/scell"
 
-    #table directory
-    sch_table_dir <<- "/net/mraid14/export/data/users/lubling/datasets/scell/results/esh/serum_2ic/tables"
-    sch_fig_dir <<- "/net/mraid14/export/data/users/lubling/datasets/scell/results/esh/serum_2ic/figs"
-    sch_expmats_dir <<- "/net/mraid14/export/data/users/lubling/datasets/scell/results/esh/serum_2ic/expmats"
-    sch_rdata_dir <<- "/net/mraid14/export/data/users/lubling/datasets/scell/results/esh/serum_2ic/rdata"
+    # UPDATE REQUIRED. analysis output directory
+    sch_work_dir <<- "/net/mraid14/export/data/users/lubling/datasets/scell/results/esh/haploid"
+
+    # table directory
+    sch_table_dir <<- sprintf("%s/tables", sch_work_dir)
+
+    # figures directory
+    sch_fig_dir <<- sprintf("%s/figs", sch_work_dir)
+
+    # cached data directory
+    sch_rdata_dir <<- sprintf("%s/rdata", sch_work_dir)
 
     sch_karyo_log2_enr_thresh <<- 1
 
-    #universe name
+    # universe name
     sch_cells_group <<- "hap_serum_2i"
 
-    # grouping thresholds
     # grouping parameters
     sch_phasing_criteria <<- "newer"
     sch_near_dists <<- 2**c(14.5, 21)
@@ -50,11 +55,8 @@
     sch_pre_m_slope <<- -1.8
     sch_pre_m_intercept <<- 1
 
-    # intra_domain_na_segment_len_to_filter <<- 1e7
-
     # a/b clustering ofn prefix
-    #sch_ab_cluster_fn_pref <<- sprintf("%s/pool_domains_cluster_trans_area_kmeans_k2_d-10.000000_breaks.around.median_q.disp0.010000_2cols_min-2", sch_table_dir)
-    sch_ab_cluster_fn_pref <<- sprintf("%s/paper/fig_s_domains_trans_cluster_area", sch_fig_dir)
+    sch_ab_cluster_fn_pref <<- sprintf("%s/paper/fig_s_domains_trans_cluster_ws", sch_fig_dir)
 
     # epigen track names
     sch_rna_tn_rep1 <<- "rna.129_hap.ES.pf_rep1"
