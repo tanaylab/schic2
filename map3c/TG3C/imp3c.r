@@ -57,12 +57,15 @@ gtrack.create_mapab_track = function(params_fn)
 
 }
 
+############
 gtrack.create_redb_tracks = function(re_seq, params_fn, verbose=FALSE)
 {
 	options(gparam.type = "string")
 	Sys.setenv("PERL_BADLANG" = 0)
 	params = init_params(params_fn)
 
+    groot = get_param("TG3C.groot", params)
+    gdb.init(groot)
     
 	gen_re_frags_pl = get_param("TG3C.gen_re_frags_pl", params)
 	re_frags_to_fends_pl = get_param("TG3C.re_frags_to_fends_pl", params)
