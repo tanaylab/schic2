@@ -34,6 +34,15 @@ We supply an mm9 genomic database with the genomic and epigenetic data required 
 
 ## Sequence Processing ##
 Processing starts with a pair of fastq files for each cell. The multiplexed fastq files and the cells' indices that allow de-multiplexation are available in GEO under accession [GSE94489](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE94489). 
+Briefly, Each multiplexed sequencing run comprises 4 FASTQ files: 
+
+1. Forward Sequencing Reads
+2. Reverse Sequencing Reads
+3. Barcodes 1 (8bps)
+4. Barcodes 2 (8bps)
+
+The order of the reads in the FASTQ files correspond to one another. The relevant barcode information can be obtained from the first read in the two barcode files. Reads with unexpected barcodes are written to a single additional file. For more details see the perl script [split_barcodes](https://bitbucket.org/tanaylab/schic2/src/0c0201bde4e4f9104d7a87c89718fcd15a6c7b93/map3c/split_barcodes?at=default) (note that it is tailored made to run in Babaraham's cluster environment).
+
 
 Detailed instructions how to use use the complete pipeline are available in the _map3c_ directory [README](https://bitbucket.org/tanaylab/schic2/src/895034bfccc8ac7a240d3e4181216f2b8fa31903/map3c/README.md?at=default&fileviewer=file-view-default) file.
 
@@ -112,7 +121,6 @@ paper_figs()
 
 
 ```
-
 
 ## Who do I talk to? ##
 For help, please contact yaniv.lubling@weizmann.ac.il

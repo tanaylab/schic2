@@ -1,0 +1,771 @@
+#!/usr/bin/perl
+use warnings;
+use strict;
+use DBI;
+use FindBin qw($Bin);
+
+my $data_folder             = "/primary";
+#my $data_folder             = "/home/wingetts";
+my $sample_size_for_indices = 500000;
+my $threshold_for_indices   = 0.01;
+
+my ( $run_folder, @lanes ) = @ARGV;
+
+unless ($run_folder) {
+    die "Usage is split_barcodes [run_folder] [list of lanes (optional - default all)]\n";
+}
+
+if (@lanes) {
+
+    my $warning = 0;
+    foreach my $lane (@lanes) {
+        unless ( $lane =~ /^\d+$/ ) {
+            warn "Invalid lane number '$lane'\n";
+            ++$warning;
+        }
+    }
+
+    die "Please fix lane ids and retry\n" if ($warning);
+
+} else {
+    @lanes = get_lanes($run_folder);
+}
+
+my $dbh = DBI->connect( "DBI:mysql:database=sierra;host=bilin2.babraham.ac.uk;port=3306", "sierrauser", "", { RaiseError => 0, AutoCommit => 1 } );
+#my $dbh = DBI->connect( "DBI:mysql:database=sierra;host=localhost;port=3306", "sierrauser", "", { RaiseError => 0, AutoCommit => 1 } );
+unless ($dbh) {
+    die "Can't connect to sierra database\n";
+}
+
+# We need to find out if this is a NextSeq run.  If it is then
+# the second barcode will need to be reverse complemented to
+# make it work with the sequences we stored because the NextSeq
+# is braindead and primes the second barcode in a different way
+# to every other illumina platform.
+
+my ($instrument_name) = $dbh->selectrow_array( "SELECT instrument.description FROM run,instrument WHERE run.run_folder_name=? AND run.instrument_id=instrument.id", undef, ($run_folder) );
+
+my $is_next_seq = 0;
+if ( $instrument_name =~ /nextseq/i ) {
+    $is_next_seq = 1;
+}
+
+#Get a quick estimate of the barcode distribution
+foreach my $lane (@lanes) {
+    process_lane( $run_folder, $lane, 0 );
+}
+
+#Demultiplex the data
+foreach my $lane (@lanes) {
+    process_lane( $run_folder, $lane, 1 );
+}
+
+print "Processing complete.\n";
+
+exit (0);
+
+#####################################################################
+#Subroutines
+#####################################################################
+
+sub process_lane {
+    my ( $run_folder, $lane, $do_split ) = @_;
+
+    warn "Processing $run_folder lane $lane\n" if $do_split;
+
+    my ( $lane_id, $sample_name ) = get_lane_details( $run_folder, $lane);
+
+    my $barcodes = get_barcodes( $run_folder, $lane, $do_split );
+
+    unless ( defined $barcodes ) {
+        warn "Skipping splitting / renaming of lane $lane as there was a problem with the sierra barcodes\n" if $do_split;
+        return;
+    }
+
+    # Get the read numbers for the reads and barcodes
+    my %read_numbers = get_read_numbers_for_run_folder($run_folder, $do_split);
+
+    unless (@$barcodes) {
+	
+		return unless $do_split;
+
+        # Just rename the sequence files
+        warn "No barcodes annotated for this lane - renaming original fastq files\n";
+
+        # Modify the sample name to be something we can put in a file name
+        $sample_name =~ s/[^a-zA-Z0-9\.\-\_]+_*/_/g;
+
+        if ( exists $read_numbers{read_1} ) {
+            my $file = get_fastq_file_name( $run_folder, $lane, $read_numbers{read_1} );
+
+            my $new_file_name = $file;
+            $new_file_name =~ s/lane\d+_/lane${lane_id}_${sample_name}_/;
+
+            warn "Renaming $file to $new_file_name\n";
+
+            rename( $file, $new_file_name ) or die "Can't rename $file to $new_file_name\n";
+        }
+
+        if ( exists $read_numbers{read_2} ) {
+            my $file = get_fastq_file_name( $run_folder, $lane, $read_numbers{read_2} );
+
+            my $new_file_name = $file;
+            $new_file_name =~ s/lane\d+_/lane${lane_id}_${sample_name}_/;
+
+            warn "Renaming $file to $new_file_name\n";
+
+            rename( $file, $new_file_name ) or die "Can't rename $file to $new_file_name\n";
+        }
+
+        return;
+    }
+
+    # Is this a single or double barcoded library
+    my $double_coded = 0;
+    foreach my $code (@$barcodes) {
+        $double_coded = 1 if ( $code->[1] );
+    }
+
+	
+	if($do_split){
+		if ($double_coded) {
+			warn "This is a double barcoded library\n";
+		} else {
+			warn "This is a single barcoded library\n";
+		}
+	}
+	
+	unless($do_split){     #Produce temporary files summarising the barcode frequencies
+		get_observed_barcodes( $run_folder, $lane, $double_coded, \%read_numbers, $barcodes, 1 );
+		return;
+	}
+
+    # Now we need to get the most abundant observed codes in the library
+    my @usable_barcodes = get_observed_barcodes( $run_folder, $lane, $double_coded, \%read_numbers, $barcodes, 0 );
+
+    unless (@usable_barcodes) {
+        warn "Failed to list usable barcodes for lane $lane - giving up\n";
+        return;
+    }
+
+    # Now we can split the actual reads using the barcodes we found
+    split_files( $run_folder, $lane, $double_coded, \%read_numbers, $lane_id, @usable_barcodes );
+
+}
+
+sub get_read_numbers_for_run_folder {
+
+    my ($run_folder, $display_messages) = @_;
+
+    open( INFO, "$data_folder/$run_folder/RunInfo.xml" ) or die "Can't find $data_folder/$run_folder/RunInfo.xml: $!";
+
+    my $read_count    = 1;
+    my $barcode_count = 1;
+
+    my %read_numbers;
+
+    while (<INFO>) {
+        if (/Read Number="(\d+)" NumCycles="\d+" IsIndexedRead="([YN])"/) {
+            if ( $2 eq 'Y' ) {
+                $read_numbers{"barcode_$barcode_count"} = $1;
+                ++$barcode_count;
+            } elsif ( $2 eq 'N' ) {
+                $read_numbers{"read_$read_count"} = $1;
+                ++$read_count;
+            } else {
+                die "Didn't understand index $2";
+            }
+        }
+
+        # MiSeq RunInfo has a different structure
+        elsif (/Read NumCycles="\d+" Number="(\d+)" IsIndexedRead="([YN])"/) {
+            if ( $2 eq 'Y' ) {
+                $read_numbers{"barcode_$barcode_count"} = $1;
+                ++$barcode_count;
+            } elsif ( $2 eq 'N' ) {
+                $read_numbers{"read_$read_count"} = $1;
+                ++$read_count;
+            } else {
+                die "Didn't understand index $2";
+            }
+        }
+    }
+
+    close INFO;
+
+    unless (%read_numbers) {
+        die "Found no valid read numbers from $data_folder/$run_folder/RunInfo.xml";
+    }
+
+    foreach my $read ( keys %read_numbers ) {
+        warn "Found $read with file $read_numbers{$read}\n" if $display_messages;
+    }
+
+    return %read_numbers;
+
+}
+
+sub split_files {
+    my ( $run_folder, $lane, $double_coded, $read_numbers, $lane_id, @barcodes ) = @_;
+
+    my $read1_file = get_fastq_file_name( $run_folder, $lane, $read_numbers->{read_1} );
+    unless ($read1_file) {
+        warn "No read1 file found for run $run_folder, lane $lane, read number " . $read_numbers->{read_1} . "\n";
+        return;
+    }
+    my $read2_file;
+    if ( $read_numbers->{read_2} ) {
+        $read2_file = get_fastq_file_name( $run_folder, $lane, $read_numbers->{read_2} );
+        unless ($read2_file) {
+            warn "No read2 file found for run $run_folder, lane $lane, read number " . $read_numbers->{read_2} . "\n";
+            return;
+        }
+    }
+
+    my $barcode1_file = get_fastq_file_name( $run_folder, $lane, $read_numbers->{barcode_1} );
+    unless ($barcode1_file) {
+        warn "No barcode1 file found for run $run_folder, lane $lane, read number " . $read_numbers->{barcode_1} . "\n";
+        return;
+    }
+
+    my $barcode2_file;
+    if ($double_coded) {
+        $barcode2_file = get_fastq_file_name( $run_folder, $lane, $read_numbers->{barcode_2} );
+        unless ($barcode2_file) {
+            warn "No barcode2 file found for run $run_folder, lane $lane, read number " . $read_numbers->{read_2} . "\n";
+            return;
+        }
+    }
+
+    my %read1_fhs;
+    my %read2_fhs;
+
+    foreach my $barcode (@barcodes) {
+
+        # Make up a viable text version of the name associated with this barcode set
+
+        my $text_version = "_";
+        my $barcode_text = $barcode->[0];
+        $text_version .= $barcode->[0];
+        $text_version .= "_";
+
+        if ($double_coded) {
+            $text_version .= $barcode->[1];
+            $text_version .= "_";
+            $barcode_text .= "_";
+            $barcode_text .= $barcode->[1];
+        }
+
+        my $name = $barcode->[2];
+        $name =~ s/[^a-zA-Z0-9\.\-\_]+_*/_/g;
+        $name =~ s/_*$//;
+        $text_version .= $name;
+        $text_version .= "_";
+
+        # Make up the filehandle for the R1 split files
+        my $r1_outfile = $read1_file;
+        $r1_outfile =~ s/_NoIndex_/$text_version/;
+        $r1_outfile =~ s/lane${lane}_/lane${lane_id}_/;
+
+        open( my $fh, "| gzip -c > $r1_outfile" ) or die "Can't write to $r1_outfile: $!";
+        warn "Made output file $r1_outfile\n";
+        $read1_fhs{$barcode_text} = $fh;
+
+        if ($read2_file) {
+            my $r2_outfile = $read2_file;
+            $r2_outfile =~ s/_NoIndex_/$text_version/;
+            $r2_outfile =~ s/lane${lane}_/lane${lane_id}_/;
+
+            open( my $fh, "| gzip -c > $r2_outfile" ) or die "Can't write to $r2_outfile: $!";
+            warn "Made output file $r2_outfile\n";
+            $read2_fhs{$barcode_text} = $fh;
+        }
+    }
+
+    my $text_version = "_NoCode_";
+
+    # Make a special file for the NoCode data
+    my $r1_outfile = $read1_file;
+    $r1_outfile =~ s/_NoIndex_/$text_version/;
+
+    open( my $fh, "| gzip -c > $r1_outfile" ) or die "Can't write to $r1_outfile: $!";
+    warn "Made output file $r1_outfile\n";
+    $read1_fhs{NoCode} = $fh;
+
+    if ($read2_file) {
+        my $r2_outfile = $read2_file;
+        $r2_outfile =~ s/_NoIndex_/$text_version/;
+
+        open( my $fh, "| gzip -c > $r2_outfile" ) or die "Can't write to $r2_outfile: $!";
+        warn "Made output file $r2_outfile\n";
+        $read2_fhs{NoCode} = $fh;
+
+    }
+
+    # Now we can start reading the barcode and read files and re-distributing the reads
+    # to the filehandles we opened.
+
+    my $r1_fh;
+    my $r2_fh;
+    my $b1_fh;
+    my $b2_fh;
+
+    open( $r1_fh, "zcat $read1_file |" )    or die "Can't read $read1_file: $!";
+    open( $b1_fh, "zcat $barcode1_file |" ) or die "Can't read $barcode1_file: $!";
+
+    if ($read2_file) {
+        open( $r2_fh, "zcat $read2_file |" ) or die "Can't read $read2_file: $!";
+    }
+    if ($double_coded) {
+        open( $b2_fh, "zcat $barcode2_file |" ) or die "Can't read $barcode2_file: $!";
+    }
+
+    my $barcode1_length = length( $barcodes[0]->[0] );
+    my $barcode2_length;
+    if ($double_coded) {
+        $barcode2_length = length( $barcodes[0]->[1] );
+    }
+
+    while (1) {
+        my $r1_header = <$r1_fh>;
+        my $r1_data   = <$r1_fh>;
+        $r1_data .= <$r1_fh>;
+        $r1_data .= <$r1_fh>;
+
+        my $r2_header;
+        my $r2_data;
+
+        if ($r2_fh) {
+            $r2_header = <$r2_fh>;
+            $r2_data   = <$r2_fh>;
+            $r2_data .= <$r2_fh>;
+            $r2_data .= <$r2_fh>;
+
+            if ($r1_data) {
+                unless ($r2_data) {
+                    warn "We ran out of R2 data before the end of R1\n";
+                    last;
+                }
+            } else {
+                if ($r2_data) {
+                    warn "We ran out of R1 data before the end of R2\n";
+                    last;
+                }
+            }
+        }
+
+        last unless ($r1_data);
+
+        $_ = <$b1_fh>;
+        my $barcode = <$b1_fh>;
+        $barcode = substr( $barcode, 0, $barcode1_length );
+        $_       = <$b1_fh>;
+        $_       = <$b1_fh>;
+
+        unless ($_) {
+            warn "We ran out of Barcode 1 data before the end of R1\n";
+            last;
+        }
+
+        if ($double_coded) {
+            $_ = <$b2_fh>;
+            my $barcode2 = <$b2_fh>;
+            $_ = <$b2_fh>;
+            $_ = <$b2_fh>;
+
+            unless ($_) {
+                warn "We ran out of Barcode 2 data before the end of R1\n";
+                last;
+            }
+
+            # We need to reverse complement the barcode 2 sequence
+            # if this was generated on a next seq
+            if ($is_next_seq) {
+
+                # As we're reversing we need to remove the newline from the end
+                $barcode2 =~ s/[\r\n]//g;
+                $barcode2 = reverse($barcode2);
+                $barcode2 =~ tr/GATCgatc/CTAGctag/;
+            }
+
+            $barcode2 = substr( $barcode2, 0, $barcode2_length );
+
+            $barcode .= "_$barcode2";
+        }
+
+        # Add the barcode to the end of the header
+        chomp($r1_header);
+        $r1_header .= " $barcode\n";
+
+        if ($r2_header) {
+            chomp($r2_header);
+            $r2_header .= " $barcode\n";
+        }
+
+        unless ( exists $read1_fhs{$barcode} ) {
+            $barcode = 'NoCode';
+        }
+
+        print { $read1_fhs{$barcode} } $r1_header, $r1_data;
+
+        if ($read2_file) {
+            print { $read2_fhs{$barcode} } $r2_header, $r2_data;
+        }
+
+    }
+
+    foreach my $fh ( values %read1_fhs ) {
+        close $fh or die $!;
+    }
+
+    if ($read2_file) {
+        foreach my $fh ( values %read2_fhs ) {
+            close $fh or die $!;
+        }
+    }
+
+}
+
+sub get_observed_barcodes {
+
+    my ( $run_folder, $lane, $double_coded, $read_numbers, $expected, $estimate ) = @_;
+
+    my @expected = @$expected;
+
+    my $prime5_length = length( $expected[0]->[0] );
+    my $prime3_length = 0;
+    if ($double_coded) {
+        $prime3_length = length( $expected[0]->[1] );
+    }
+
+    my @barcodes;
+
+    my $first_index_file;
+    my $second_index_file;
+
+    unless ( $read_numbers->{barcode_1} ) {
+        warn "No barcode_1 read number found\n" unless $estimate;
+        return ();
+    }
+
+    $first_index_file = get_fastq_file_name( $run_folder, $lane, $read_numbers->{barcode_1} );
+    warn "First index file is $first_index_file\n" unless $estimate;
+    return () unless ($first_index_file);
+
+    # Get the second barcode file if we're double barcoded
+    if ($double_coded) {
+        unless ( $read_numbers->{barcode_2} ) {
+            warn "No barcode_2 read number found\n" unless $estimate;
+            return ();
+        }
+
+        $second_index_file = get_fastq_file_name( $run_folder, $lane, $read_numbers->{barcode_2} );
+        warn "Second index file is $second_index_file\n" unless $estimate;
+        return () unless ($second_index_file);
+    }
+
+    my $fh1;
+    my $fh2;
+
+    open( $fh1, "zcat $first_index_file 2>/dev/null |" ) or die "Can't open $first_index_file: $!";
+
+    if ($double_coded) {
+        open( $fh2, "zcat $second_index_file 2>/dev/null |" ) or die "Can't open $second_index_file: $!";
+    }
+
+    my $actual_count = 0;
+
+    my %barcodes_seen;
+
+    # Pre-populate the list of seen barcodes with the ones we're expecting
+    # so they're not missed off if we don't actually see them at all
+
+    foreach my $expected (@expected) {
+        if ($double_coded) {
+            $barcodes_seen{ $expected->[0] . "_" . $expected->[1] } = 0;
+        } else {
+            $barcodes_seen{ $expected->[0] } = 0;
+        }
+    }
+
+    warn "Scanning index reads for observed barcodes\n" unless ($estimate);
+
+    while(<$fh1>) {
+        # if ( $actual_count == $sample_size_for_indices ){    #Print out an interim barcode summary
+			# my $project_folder = ( glob("$data_folder/$run_folder/Unaligned/Project*/Sample_lane$lane") )[0];
+			# die "Couldn't find project folder" unless ($project_folder);
+			# my $barcode_data_file = "$project_folder/barcode_L00${lane}_data.txt";
+			# open( BARCODES_TEMP, '>', $barcode_data_file ) or die "Can't write to $barcode_data_file: $!";
+			# print BARCODES_TEMP join( "\t", ( "Code", "Freq", "Name" ) ), "\n";
+			# foreach my $barcode ( sort { $barcodes_seen{$b} <=> $barcodes_seen{$a} } keys %barcodes_seen ) {
+				# my $freq = $barcodes_seen{$barcode} / $actual_count;
+				# my $name = "";
+				# # See if we can match this to an existing barcode
+				# foreach my $expected (@expected) {
+					# if ($double_coded) {
+						# if ( $barcode eq $expected->[0] . "_" . $expected->[1] ) {
+							# $name = $expected->[2];
+							# last;
+						# }
+					# } else {
+						# if ( $barcode eq $expected->[0] ) {
+							# $name = $expected->[2];
+							# last;
+						# }
+					# }
+				# }
+				# if ( $freq >= $threshold_for_indices or $name ) {
+					# print BARCODES_TEMP join( "\t", ( $barcode, $freq, $name ) ), "\n";
+					# if ( $name and $freq < $threshold_for_indices ) {
+						# warn "Found $barcode with name '$name' with freq $freq (below threshold)\n";
+					# } else {
+						# warn "Found $barcode with name '$name' with freq $freq\n";
+					# }
+					# my ( $first, $second ) = split( "_", $barcode );
+					# # We've changed our mind so that actually the only barcodes we want to
+					# # extract are those which were expected.  We'll keep the stats for the
+					# # other ones, and we'll show them in the graph, but now we'll filter
+					# # the list to process back to those which were expected only
+					# if ($name) {
+						# push @barcodes, [ $first, $second, $name ];
+					# }
+				# }
+			# }
+			# close BARCODES_TEMP or die "Can't write to barcode file: $!";			
+		# }
+
+        #$_ = <$fh1>;
+        my $seq = <$fh1>;
+        $_ = <$fh1>;
+        $_ = <$fh1>;
+
+        last unless ($seq);
+
+        ++$actual_count;
+
+        $seq = substr( $seq, 0, $prime5_length );
+
+        # We used to have a test for barcode 1 containing N here, but
+        # that breaks things - we have to at least read barcode 2 if
+        # the library is double barcoded otherwise codes 1 and 2 get
+        # out of step.
+
+        my $seq2;
+
+        if ($double_coded) {
+            $_    = <$fh2>;
+            $seq2 = <$fh2>;
+            $_    = <$fh2>;
+            $_    = <$fh2>;
+
+            # If this is a nextseq run then the second barcode will be
+            # reverse complemented from what we'd normally expect so
+            # we need to reverse complement it back
+            if ($is_next_seq) {
+
+                # As we're reversing we need to remove the newline from the end
+                $seq2 =~ s/[\r\n]//g;
+                $seq2 = reverse($seq2);
+                $seq2 =~ tr/GATCgatc/CTAGctag/;
+            }
+
+            $seq2 = substr( $seq2, 0, $prime3_length );
+            next if ( index( $seq2, 'N' ) >= 0 );
+        }
+
+        # Now it's safe to test whether barcode 1 has an N in it.
+        next if ( index( $seq, 'N' ) >= 0 );
+
+        my $combined_string = $seq;
+        if ($double_coded) {
+            $combined_string .= "_" . $seq2;
+        }
+
+        ++$barcodes_seen{$combined_string};
+		
+		if($estimate){
+			last if $actual_count == 1_000_000;    #Only use first million lines
+		}
+    }
+
+    close($fh1);
+    close($fh2) if ($fh2);
+
+    # Now we need to go through the barcodes we saw finding out if they
+    # passed the threshold we picked and annotating them with the name
+    # of the sample if it was a barcode we were expecting.
+    #
+    # We'll also write these values out to a file, and then run an R
+    # script on this to generate a graphical view of the barcodes we
+    # saw
+
+    my $project_folder = ( glob("$data_folder/$run_folder/Unaligned/Project*/Sample_lane$lane") )[0];
+
+    die "Couldn't find project folder" unless ($project_folder);
+
+    my $barcode_data_file = "$project_folder/barcode_L00${lane}_data.txt";
+
+    open( BARCODES, '>', $barcode_data_file ) or die "Can't write to $barcode_data_file: $!";
+    print BARCODES join( "\t", ( "Code", "Freq", "Name" ) ), "\n";
+
+    foreach my $barcode ( sort { $barcodes_seen{$b} <=> $barcodes_seen{$a} } keys %barcodes_seen ) {
+		my $freq = $barcodes_seen{$barcode} / $actual_count;
+
+        my $name = "";
+
+        # See if we can match this to an existing barcode
+        foreach my $expected (@expected) {
+            if ($double_coded) {
+                if ( $barcode eq $expected->[0] . "_" . $expected->[1] ) {
+                    $name = $expected->[2];
+                    last;
+                }
+            } else {
+                if ( $barcode eq $expected->[0] ) {
+                    $name = $expected->[2];
+                    last;
+                }
+            }
+        }
+
+        if ( $freq >= $threshold_for_indices or $name ) {
+
+            print BARCODES join( "\t", ( $barcode, $freq, $name ) ), "\n";
+			
+			unless($estimate){
+				if ( $name and $freq < $threshold_for_indices ) {
+					warn "Found $barcode with name '$name' with freq $freq (below threshold)\n";
+				} else {
+					warn "Found $barcode with name '$name' with freq $freq\n";
+				}
+			}
+            my ( $first, $second ) = split( "_", $barcode );
+
+            # We've changed our mind so that actually the only barcodes we want to
+            # extract are those which were expected.  We'll keep the stats for the
+            # other ones, and we'll show them in the graph, but now we'll filter
+            # the list to process back to those which were expected only
+
+            if ($name) {
+                push @barcodes, [ $first, $second, $name ];
+            }
+        }
+
+    }
+
+    close BARCODES or die "Can't write to barcode file: $!";
+
+    # Run the R Script
+    my $barcode_png_file = "$project_folder/barcode_L00${lane}_graph.png";
+
+    system("Rscript $Bin/barcode_graph.r $barcode_data_file $barcode_png_file > /dev/null") == 0 or die "Can't run barcode_graph.r script";
+
+    return @barcodes;
+
+}
+
+sub get_lane_details {
+    my ( $run_folder, $lane ) = @_;
+
+    my ( $lane_id, $sample_name ) = $dbh->selectrow_array( "SELECT lane.id,sample.users_sample_name FROM run,lane,sample WHERE run.run_folder_name=? AND lane.flowcell_id=run.flowcell_id AND lane.lane_number=? and lane.sample_id=sample.id", undef, ( $run_folder, $lane ) );
+
+    die "Failed to get lane id for $run_folder $lane" unless ($lane_id);
+
+    return ( $lane_id, $sample_name );
+}
+
+sub get_barcodes {
+    my ( $run_folder, $lane, $display_messages ) = @_;
+
+    my @barcodes;
+    my $prime5_count = 0;
+    my $prime3_count = 0;
+
+    my $sth = $dbh->prepare("select barcode.5_prime_barcode,barcode.3_prime_barcode,barcode.name from run,flowcell,lane,barcode WHERE run.run_folder_name = ? and run.flowcell_id=flowcell.id AND run.flowcell_id=lane.flowcell_id AND lane.lane_number = ? AND lane.sample_id = barcode.sample_id");
+
+    $sth->execute( $run_folder, $lane ) or die "Can't list barcodes for $run_folder, $lane: " . $dbh->errstr();
+
+    while ( my ( $prime5, $prime3, $name ) = $sth->fetchrow_array() ) {
+
+        # Remove any spaces in the barcodes
+        $prime5 =~ s/\s+//g;
+        $prime3 =~ s/\s+//g;
+
+        # Remove any non-ascii chars in the name
+        $name =~ s/[^A-Za-z0-9\-\+\=\:\_]+/_/g;
+        my $barcode_name = $prime5;
+        $barcode_name .= "_$prime3" if ($prime3);
+        warn "Found Sierra barcode ${barcode_name}_$name\n" if $display_messages;
+        ++$prime5_count if ($prime5);
+        ++$prime3_count if ($prime3);
+        push @barcodes, [ $prime5, $prime3, $name ];
+    }
+
+    warn "\n";
+
+    # Do some sanity checks
+    if ( $prime3_count > 0 && $prime3_count != $prime5_count ) {
+        warn "Strange barcodes, Number of 3' barcodes was not the same as the number of 5' and wasn't zero either\n";
+        return undef;
+    }
+
+    for ( 1 .. $#barcodes ) {
+        if ( length( $barcodes[$_]->[0] ) != length( $barcodes[ $_ - 1 ]->[0] ) ) {
+            warn "Barcodes didn't all have the same length at the 5' end\n";
+            return undef;
+        }
+        if ( $barcodes[$_]->[1] and ( length( $barcodes[$_]->[0] ) != length( $barcodes[ $_ - 1 ]->[0] ) ) ) {
+            warn "Barcodes didn't all have the same length at the 3' end\n";
+            return undef;
+        }
+    }
+
+    return \@barcodes;
+
+}
+
+sub get_lanes {
+    my ($run_folder) = @_;
+
+    my $dir = "$data_folder/$run_folder";
+
+    unless ( -e $dir ) {
+        die "Couldn't find the specified run folder at '$dir'\n";
+    }
+
+    my @lane_directories = <$dir/Unaligned/Project*/Sample_lane*>;
+
+    my @lanes;
+
+    foreach my $lane_path (@lane_directories) {
+        if ( $lane_path =~ /Sample_lane(\d+)/ ) {
+            push @lanes, $1;
+        } else {
+            warn "Couldn't extract a lane number from $lane_path\n";
+        }
+    }
+
+    unless (@lanes) {
+        die "Couldn't find any valid lanes undef $dir\n";
+    }
+
+    return @lanes;
+
+}
+
+sub get_fastq_file_name {
+    my ( $run_folder, $lane, $read_number ) = @_;
+
+    my @files = <$data_folder/$run_folder/Unaligned/Project*/Sample_lane$lane/lane${lane}_NoIndex_L*_R${read_number}.fastq.gz>;
+
+    if ( @files == 1 ) {
+        return $files[0];
+    } elsif (@files) {
+        warn "Found multiple hits to read $read_number in lane $lane of $run_folder\n";
+        return undef;
+    } else {
+        warn "Found no hits to read $read_number in lane $lane of $run_folder\n";
+        return undef;
+    }
+}
+
