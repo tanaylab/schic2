@@ -5,7 +5,7 @@ Define the following environment variables:
 
 1. _PIPELINE_HOME_ : should point to your repository directory (parent of _map3c_ directory).
 2. _PERL5LIB_      : should include the repository directory.
-3. _MM9_DB_ : path to the (mm9 genomic database)[http://www.wisdom.weizmann.ac.il/~lubling/schic2/schic2_mm9_db.tar.gz] directory you downloaded and unpacked.
+3. _MM9_DB_ : path to the [mm9 genomic database](http://www.wisdom.weizmann.ac.il/~lubling/schic2/schic2_mm9_db.tar.gz) directory you downloaded and unpacked.
 
 We assume you downloaded the FASTQ files from GEO, accession [GSE94489](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE94489) and de-multiplexed them such that each cell has a pair of sequence files (paired-end fastq files) with the cell's indices in their names. You should de-multiplex each fastq into a separate directory to prevent name clashing between cells from different batches but with the same indices.
 
