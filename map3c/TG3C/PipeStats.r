@@ -49,9 +49,6 @@ update.tracks.stats=function(track.re.str, lanes.fn=NULL)
 
     if (!is.null(lanes.fn)) {
       value = as.character(lanes[which(lanes[,1] == tn), 2])
-      if (length(value) > 1) {
-        browser()
-      }
       gtrack.var.set(tn, "lane", value)  
     }
     

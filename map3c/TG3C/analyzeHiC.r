@@ -689,7 +689,6 @@ gtrack.2d.gen_DI_prof = function(track_nm, scale=2e6, res=40e3, min_diag_d=1000)
     starts2=iter_1d$start, 
     ends2=iter_1d$end)
 
-  browser()
   if(length(gvtrack.ls("obs_up")) == 1) {
     gvtrack.rm("obs_up")
   }
