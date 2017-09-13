@@ -3,6 +3,7 @@ TG3C_miss_conf_err = FALSE
 init_params = function(fn)
 {
   t = read.table(fn, sep="=", fill=T)
+  t[, 2] = gsub("ENV{", "{", t[, 2], fixed=T)
 
   params = sapply(as.character(t[,2]), FUN=function(v) { system2("echo", v, stdout=T) })
   names(params) = t[,1]

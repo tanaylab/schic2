@@ -10,7 +10,7 @@ It is composed of two main parts (see more details below):
 2. **Single-cell analysis**: relevant code under the _analysis_ folder. It contains the code that builds the data and creates the figures that appear in the paper. 
 
 ## Requirements ##
-- _Perl_ 
+- _Perl_  (with module List::MoreUtils)
 - [_bowtie2_](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml) 
 - R with these packages:
     * _misha_ (see below how to install it)
