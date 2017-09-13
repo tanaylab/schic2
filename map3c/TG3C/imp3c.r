@@ -19,6 +19,7 @@ gtrack.create_mapab_track = function(params_fn)
   binsize = as.numeric(get_param("TG3C.mapa_binsize", params))
 
   gdb.init(groot)
+  dir.create(wd, showWarnings=F)
   
   #break the genome to reads
   message(sprintf("creating %d len reads from the genome\n", rlen))

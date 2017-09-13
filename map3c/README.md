@@ -19,7 +19,7 @@ If you wish to produce another mappability track, first update the paths to your
 ```
 #!r
 source("TG3C/imp3c.r")
-
+library(misha)
 gtrack.create_mapab_track(params_fn="config/mm9_mapa.conf")
 ```
 
@@ -71,12 +71,14 @@ Example run (replace capital parameters with real parameters):
 cat CELLS_REGEXP_NAMES_PAIRS.TXT | perl ${PIPELINE_HOME}/map3c/TG3C/split_pairs_to_cfgs.pl INPUT_FASTQ_DIR OUTPUT_FILE_PREFIX 50 1CDX1
 ```
 
+Update the paths to the bowtie2 executable and the mm9 indices in the map3c/config/scell_shared.conf file.
+
 Once all config files are generated, you can issue a single command per config file. From within R (opened under the _map3c_ directory), type (replace CONFIG_FILE with the actual value):
 
 ```
 #!r
 source("TG3C/imp3c.r")
-gtrack.2d.create_from_3Cseq(newtrack_name="scell.nextera", track_desc="schic track", groot=sprintf("%s/trackdb", Sys.getenv("MM9_DB"), params_fn=CONFIG_FILE)
+gtrack.2d.create_from_3Cseq(newtrack_name="scell.nextera", track_desc="schic track", groot=sprintf("%s/trackdb", Sys.getenv("MM9_DB")), params_fn=CONFIG_FILE)
 
 ```
 
