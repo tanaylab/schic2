@@ -173,7 +173,7 @@ simple_cap <- function(x)
 TGLKMeans_wrapper <- function(data, fn, k)
 {
     write.table(data, fn, sep="\t", quote=F, col.names=NA)
-    system(sprintf("/net/mraid14/export/data/tools/tgtools/TGLKMeans_static %s %s euclid -allow_nas=1 &> %s.log", fn, k, fn))
+    system(sprintf("./bin/TGLKMeans_static %s %s euclid -allow_nas=1 &> %s.log", fn, k, fn))
     km = list()
     m.k = read.table(paste(fn, "kclust", sep="."), header=T)
     m.k$clust = m.k$clust + 1
