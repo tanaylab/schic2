@@ -30,7 +30,7 @@ _misha_ is an R package for genomic analysis, developed by the Tanay lab, and us
 install.packages("http://www.wisdom.weizmann.ac.il/~lubling/schic2/misha_3.5.6.tar.gz", repos=NULL)
 ```
 
-We supply an mm9 genomic database with the genomic and epigenetic data required to run the sequence pipeline and the downstream analysis. Download and unpack [this](http://www.wisdom.weizmann.ac.il/~lubling/schic2/schic2_mm9_db.tar.gz) archive (5.5 Gb after unpacking). The _trackdb_ folder in this tar is the root directory of the genomic database, later referred to as _groot_.
+We supply an mm9 genomic database with the genomic and epigenetic data required to run the sequence pipeline and the downstream analysis. Download and unpack [this](http://compgenomics.weizmann.ac.il/files/archives/schic2_mm9_db.tar.gz) archive (5.5 Gb after unpacking). The _trackdb_ folder in this tar is the root directory of the genomic database, later referred to as _groot_.
 
 ## Sequence Processing ##
 Processing starts with a pair of fastq files for each cell. The multiplexed fastq files and the cells' indices that allow de-multiplexation are available in GEO under accession [GSE94489](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE94489). 
