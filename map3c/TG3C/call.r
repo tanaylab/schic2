@@ -1,4 +1,4 @@
-#! /net/mraid14/export/data/users/eladch/tools/CO6/R/3.2.1/bin/Rscript
+#!/usr/bin/env Rscript
 #system("module update")
 
 options(warn=1)
@@ -51,6 +51,7 @@ setwd(wd)
 
 # load source file
 cat(sprintf("loading %s\n", source.fn))
+cat(sprintf("Workdir: %s\n", getwd()))
 suppressPackageStartupMessages(source(source.fn))
 options(error=NULL)
 
