@@ -44,7 +44,7 @@ Briefly, Each multiplexed sequencing run comprises 4 FASTQ files:
 The order of the reads in the FASTQ files correspond to one another. The relevant barcode information can be obtained from the first read in the two barcode files. Reads with unexpected barcodes are written to a single additional file. For more details see the perl script [split_barcodes](https://bitbucket.org/tanaylab/schic2/src/68d7972f64ac2fd32b7c31c5041b39a7176bf14d/map3c/split_barcodes?at=default) (note that it is tailored made to run in Babaraham's cluster environment).
 
 
-Detailed instructions how to use use the complete pipeline are available in the _map3c_ directory [README](https://bitbucket.org/tanaylab/schic2/src/99f42eeb660931fdef5d66e3d306be2141310d9f/map3c/?at=default)
+Detailed instructions how to use use the complete pipeline are available in the _map3c_ directory [README](https://bitbucket.org/tanaylab/schic2/src/tip/map3c/?at=default)
 The final step of the pipeline is to upload the contact map of a cell into the genomic database. We supply all contact maps below to allow you to spare you from rerunning the sequence processing step if you prefer:
 
 |Cells     |Condition  |Batches|Link   |Size |
