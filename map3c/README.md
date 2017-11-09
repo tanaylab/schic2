@@ -85,16 +85,7 @@ gtrack.2d.create_from_3Cseq(newtrack_name="scell.nextera", track_desc="schic tra
 To issue this command from the shell (and allow you to submit it as a job) you can use the _TG3C/call.r_ script we supply:
 ```
 #!bash
-${PIPELINE_HOME}/TG3C/call.r $PIPELINE_HOME/map3c TG3C/imp3c.r gtrack.2d.create_from_3Cseq newtrack_name=scell.nextera track_desc=schic groot=${MM9_DB}/trackdb/ params_fn=CONFIG_FILE
+${PIPELINE_HOME}/map3c/TG3C/call.r $PIPELINE_HOME/map3c TG3C/imp3c.r gtrack.2d.create_from_3Cseq newtrack_name=scell.nextera track_desc=schic groot=${MM9_DB}/trackdb/ params_fn=CONFIG_FILE
 
 
 ```
-
-
-
-
-
-
-
-
-
