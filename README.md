@@ -72,10 +72,13 @@ gdb.init(sprintf("%s/trackdb", mm9_db))
 dirs = list.files(data_dir)
 
 # parse dirs into track names
-nms = paste0("scell.nextera.", gsub("-", "_"), gsub(".", "_", dirs, fixed=T), fixed=T))
+nms = paste0("scell.nextera.", gsub("-", "_", gsub(".", "_", dirs, fixed=T), fixed=T))
 
 # fends file is the list of GATC fragment ends
 fends = sprintf("%s/seq/redb/GATC.fends", mm9_db)
+
+# create tracks directory 
+dir.create(sprintf("%s/trackdb/tracks/scell/nextera", mm9_db), showWarnings=F, recursive=T)
 
 # uploading contact files to misha
 if (support_sge) {
@@ -88,7 +91,7 @@ if (support_sge) {
 else {
   # upload cell by cell
   for (i in seq_along(nms)) {
-    gtrack.2d.import_contacs(nms[i], "", sprintf("%s/%s/adj", base_dir, dirs[i]), fends, allow.duplicates=F)
+    gtrack.2d.import_contacts(nms[i], "", sprintf("%s/%s/adj", data_dir, dirs[i]), fends, allow.duplicates=F)
   }
 }
 ```
