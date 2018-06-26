@@ -124,5 +124,7 @@ paper_figs()
 
 ```
 
+* Metadata information on the cells is available in the features table at [GSE94489](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE94489). It contains experimental information on each cell, virtual sorting data and the features that were computed and used in the paper.
+
 ## Who do I talk to? ##
 For help, please contact yaniv.lubling@weizmann.ac.il
