@@ -96,6 +96,10 @@ else {
 }
 ```
 
+
+#### Translating contact maps into genomic coordinates ####
+Each row in the above supplied contact maps represents a single contact. The columns in the files are fend1, fend2 and count, where fend1/2 are the IDs of the interacting fragment ends. You can use the [GATC.fends](http://www.wisdom.weizmann.ac.il/~lubling/schic2/GATC.fends.gz) file (also available in the genomic database supplied above under the seq/redb directory) to translate the fend ids into genomic coordinates. The GATC.fends file maps each fend ID (first column) to chromosome and coordinate (2nd and 3rd columns). 
+
 ## Analyse Single-Cell Hi-C datasets ##
 Once the contact maps of the cells are uploaded to the genomic database, you can start their analysis. All code and parameter files are supploid under the _analysis_ directory. 
 
