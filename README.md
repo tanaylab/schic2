@@ -30,7 +30,7 @@ _misha_ is an R package for genomic analysis, developed by the Tanay lab, and us
 install.packages("http://www.wisdom.weizmann.ac.il/~lubling/schic2/misha_3.5.6.tar.gz", repos=NULL)
 ```
 
-We supply an mm9 genomic database with the genomic and epigenetic data required to run the sequence pipeline and the downstream analysis. Download and unpack [this](http://compgenomics.weizmann.ac.il/files/archives/schic2_mm9_db.tar.gz) archive (5.5 Gb after unpacking). The _trackdb_ folder in this tar is the root directory of the genomic database, later referred to as _groot_.
+We supply an mm9 genomic database with the genomic and epigenetic data required to run the sequence pipeline and the downstream analysis. Download and unpack [this](https://schic2.s3.eu-west-1.amazonaws.com/schic2_mm9_db.tar.gz) archive (5.5 Gb after unpacking). The _trackdb_ folder in this tar is the root directory of the genomic database, later referred to as _groot_.
 
 ## Sequence Processing ##
 Processing starts with a pair of fastq files for each cell. The multiplexed fastq files and the cells' indices that allow de-multiplexation are available in GEO under accession [GSE94489](http://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE94489). 
@@ -44,21 +44,21 @@ Briefly, Each multiplexed sequencing run comprises 4 FASTQ files:
 The order of the reads in the FASTQ files correspond to one another. The relevant barcode information can be obtained from the first read in the two barcode files. Reads with unexpected barcodes are written to a single additional file. For more details see the perl script [split_barcodes](https://bitbucket.org/tanaylab/schic2/src/68d7972f64ac2fd32b7c31c5041b39a7176bf14d/map3c/split_barcodes?at=default) (note that it is tailored made to run in Babaraham's cluster environment).
 
 
-Detailed instructions how to use use the complete pipeline are available in the _map3c_ directory [README](https://bitbucket.org/tanaylab/schic2/src/tip/map3c/?at=default)
+Detailed instructions how to use use the complete pipeline are available in the _map3c_ directory [README](https://github.com/tanaylab/schic2/src/tip/map3c/?at=default)
 The final step of the pipeline is to upload the contact map of a cell into the genomic database. We supply all contact maps below to allow you to spare you from rerunning the sequence processing step if you prefer:
 
 |Cells     |Condition  |Batches|Link   |Size |
 |:--------:|:---------:|:--------:|:----:|:--------:|
-|Haploids |2i |All| [gz](http://compgenomics.weizmann.ac.il/files/archives/schic_hap_2i_adj_files.tar.gz)|1.2 Gb|
-|Haploids |Serum |All| [gz](http://compgenomics.weizmann.ac.il/files/archives/schic_hap_serum_adj_files.tar.gz)|842 Mb|
-|Diploids |2i |1CDU| [gz](http://compgenomics.weizmann.ac.il/files/archives/schic_hyb_1CDU_adj_files.tar.gz)|461 Mb|
-|Diploids |2i |1CDX1| [gz](http://compgenomics.weizmann.ac.il/files/archives/schic_hyb_1CDX1_adj_files.tar.gz)|511 Mb|
-|Diploids |2i |1CDX2| [gz](http://compgenomics.weizmann.ac.il/files/archives/schic_hyb_1CDX2_adj_files.tar.gz)|618 Mb|
-|Diploids |2i |1CDX3| [gz](http://compgenomics.weizmann.ac.il/files/archives/schic_hyb_1CDX3_adj_files.tar.gz)|618 Mb|
-|Diploids |2i |1CDX4| [gz](http://compgenomics.weizmann.ac.il/files/archives/schic_hyb_1CDX4_adj_files.tar.gz)|779 Mb|
-|Diploids |2i |1CDES| [gz](http://compgenomics.weizmann.ac.il/files/archives/schic_hyb_1CDES_adj_files.tar.gz)|589 Mb|
-|Diploids |Serum |1CDS1| [gz](http://compgenomics.weizmann.ac.il/files/archives/schic_hyb_1CDS1_adj_files.tar.gz)|831 Mb|
-|Diploids |Serum |1CDS2| [gz](http://compgenomics.weizmann.ac.il/files/archives/schic_hyb_1CDS2_adj_files.tar.gz)|1.1 Gb|
+|Haploids |2i |All| [gz](https://schic2.s3.eu-west-1.amazonaws.com/schic_hap_2i_adj_files.tar.gz)|1.2 Gb|
+|Haploids |Serum |All| [gz](https://schic2.s3.eu-west-1.amazonaws.com/schic_hap_serum_adj_files.tar.gz)|842 Mb|
+|Diploids |2i |1CDU| [gz](https://schic2.s3.eu-west-1.amazonaws.com/schic_hyb_1CDU_adj_files.tar.gz)|461 Mb|
+|Diploids |2i |1CDX1| [gz](https://schic2.s3.eu-west-1.amazonaws.com/schic_hyb_1CDX1_adj_files.tar.gz)|511 Mb|
+|Diploids |2i |1CDX2| [gz](https://schic2.s3.eu-west-1.amazonaws.com/schic_hyb_1CDX2_adj_files.tar.gz)|618 Mb|
+|Diploids |2i |1CDX3| [gz](https://schic2.s3.eu-west-1.amazonaws.com/schic_hyb_1CDX3_adj_files.tar.gz)|618 Mb|
+|Diploids |2i |1CDX4| [gz](https://schic2.s3.eu-west-1.amazonaws.com/schic_hyb_1CDX4_adj_files.tar.gz)|779 Mb|
+|Diploids |2i |1CDES| [gz](https://schic2.s3.eu-west-1.amazonaws.com/schic_hyb_1CDES_adj_files.tar.gz)|589 Mb|
+|Diploids |Serum |1CDS1| [gz](https://schic2.s3.eu-west-1.amazonaws.com/schic_hyb_1CDS1_adj_files.tar.gz)|831 Mb|
+|Diploids |Serum |1CDS2| [gz](https://schic2.s3.eu-west-1.amazonaws.com/schic_hyb_1CDS2_adj_files.tar.gz)|1.1 Gb|
 
 Assuming you unpack the archives into a directory pointed by _data_dir_, and you unpack the genomic database into _mm9_db_, run the following code in R to upload contact maps into the genomic database (update _support_sge_ to TRUE if sge is supported):
 ```
