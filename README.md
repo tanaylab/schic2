@@ -27,7 +27,9 @@ It is composed of two main parts (see more details below):
 _misha_ is an R package for genomic analysis, developed by the Tanay lab, and used throughout this repository. To install the package type in your _R_ session:
 ```
 #!r
-install.packages("http://www.wisdom.weizmann.ac.il/~lubling/schic2/misha_3.5.6.tar.gz", repos=NULL)
+install.packages("https://schic2.s3.eu-west-1.amazonaws.com
+
+/schic2/misha_3.5.6.tar.gz", repos=NULL)
 ```
 
 We supply an mm9 genomic database with the genomic and epigenetic data required to run the sequence pipeline and the downstream analysis. Download and unpack [this](https://schic2.s3.eu-west-1.amazonaws.com/schic2_mm9_db.tar.gz) archive (5.5 Gb after unpacking). The _trackdb_ folder in this tar is the root directory of the genomic database, later referred to as _groot_.
